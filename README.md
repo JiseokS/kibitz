@@ -4,6 +4,19 @@
 
 Kibitz is an English-first iOS and Android app for reflecting on something you did or said. Write about a moment, compare four philosophical interpretations, and decide which perspective stays with you.
 
+<!-- kibitz-design-review:start -->
+## Personal MVP design review — October 20, 2026
+
+The next design uses scoreless, written feedback: choose a philosopher for each entry, read that take first, then switch to other perspectives prepared while reading. A collapsed comparison and practical next step sit below. Open-ended conversations and reasoning affinity are later work.
+
+The feature tables below describe the implemented prototype. The review documents distinguish confirmed product choices, technical proposals and future work; the revised flow is not implemented yet.
+
+- [Design review](kibitz/docs/planning/DESIGN_REVIEW.md): product, interaction, contracts, failure behavior and acceptance criteria.
+- [Decision workbook](kibitz/docs/planning/DECISIONS_WORKBOOK.md): nine confirmed choices and editable remaining decisions.
+- [Delivery and review plan](kibitz/docs/planning/DELIVERY_PLAN.md): scoped tasks, verification and Cursor/Antigravity handoffs.
+
+<!-- kibitz-design-review:end -->
+
 ## Product and scope
 
 - **Name:** Kibitz. The project directory, package, Expo slug and URL scheme are `kibitz`.
