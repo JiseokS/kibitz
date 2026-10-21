@@ -1,0 +1,27 @@
+{
+  "id": "review-harness",
+  "goal": "Review all current Kibitz developer-tooling and documentation changes together, including the Codex-to-Antigravity harness, pinned reviewer model, workflow diagram, and implemented-versus-planned product boundaries.",
+  "acceptance": [
+    {
+      "id": "A01",
+      "description": "Only a complete review of the exact prepared base/head with all required checks passing can produce PASS."
+    },
+    {
+      "id": "A02",
+      "description": "Failures, unavailable authentication/tools, malformed output, stale source, and snapshot edits cannot produce PASS."
+    },
+    {
+      "id": "A03",
+      "description": "Review runs use independent copies, preserve the source repository, bound execution, and never merge or push."
+    },
+    {
+      "id": "A04",
+      "description": "The committed reviewer policy explicitly selects Claude Opus 4.6 Thinking, records requested and CLI-reported model selection, and rejects missing or mismatched model evidence without silent downgrade."
+    },
+    {
+      "id": "A05",
+      "description": "All changed documentation and workflow diagrams agree with the executable workflow, distinguish implemented app behavior from planned redesign and historical verification, and preserve the owner's manual commit/push choice."
+    }
+  ],
+  "checks": ["harness", "typecheck", "lint", "app-tests"]
+}

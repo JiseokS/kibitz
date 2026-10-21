@@ -40,7 +40,7 @@ Loop's useful planning chain is: product problem → personas and jobs → core 
 | Domain ownership | Separate reflection, evaluation, interpretation display, journal and future affinity | Rebuilding the current stack as Django/FastAPI or splitting it into services |
 | Contract-first tasks | Specify the one-perspective and remaining-perspectives responses before UI integration | Treating architecture diagrams or model prose as verified running behavior |
 | Acceptance-driven delivery | Each task has an observable outcome and failure checks | Marking a module complete merely because its files exist |
-| Handoff discipline | Cursor implements; Antigravity reviews the same fixed revision | Letting two agents rewrite shared files simultaneously |
+| Handoff discipline | Codex implements; Antigravity reviews the same fixed revision | Letting two agents rewrite shared files simultaneously |
 
 Some Loop documents describe an earlier Django/FastAPI design while its current entry point uses FastAPI and domain services. Its production plan also mixes earlier status with later updates. Kibitz should distinguish **implemented baseline**, **confirmed target**, **proposal** and **verified evidence** instead of duplicating competing truths.
 
@@ -372,7 +372,7 @@ The workbook records confirmed and open choices. The delivery plan maps requirem
 1. Resolve the open choices needed by the first implementation slice.
 2. Promote accepted target behavior into `PRODUCT.md`/decision records and revise the active roadmap.
 3. Keep current implementation status separate until the code changes and checks exist.
-4. Have Cursor implement one scoped task at a time; Antigravity reviews its fixed commit and acceptance criteria.
+4. Have Codex implement one scoped task at a time; Antigravity reviews its fixed commit and acceptance criteria.
 
 ### Reference basis
 

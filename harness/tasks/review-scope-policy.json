@@ -1,0 +1,20 @@
+{
+  "id": "review-scope-policy",
+  "goal": "Routine review of the documentation-only review-scope policy follow-up after the completed tooling integration review. Verify scope/check guidance, actual runner compatibility and accurate evidence attribution without reopening the unchanged implementation review.",
+  "acceptance": [
+    {
+      "id": "S01",
+      "description": "Routine review covers the latest increment and affected dependencies/tests, while feature completion reviews the entire feature-start-to-head range. Guidance agrees across documents and uses existing base/context controls without claiming an implemented automatic scope mode."
+    },
+    {
+      "id": "S02",
+      "description": "Check selection is based on impact, all changed files remain in scope, findings retain their context, and earlier app results remain attributed to their actual revision. The completed integration PASS is distinguished from this documentation-only follow-up."
+    },
+    {
+      "id": "S03",
+      "description": "Owner communication is Korean, product/repository documentation remains English, manual commit/push control is preserved, and the existing pinned reviewer model and application behavior are unchanged."
+    }
+  ],
+  "checks": ["harness"],
+  "context_files": ["harness/tasks/review-harness.json"]
+}

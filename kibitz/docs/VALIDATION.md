@@ -1,6 +1,22 @@
 # Kibitz validation record
 
-Updated 2026-10-19. Environment: macOS, Node.js 24.12.0. Current automated evidence, historical prototype evidence and unverified native/live behavior are recorded separately.
+Updated 2026-10-21. Environment: macOS, Node.js 24.12.0. Current automated evidence, historical prototype evidence and unverified native/live behavior are recorded separately.
+
+## Development review harness — 2026-10-21
+
+- Harness behavior suite: **26/26 passed** with local fake reviewer processes and temporary Git repositories after adding the pinned-model policy. Covers exact commit/acceptance validation, unavailable authentication, execution errors, malformed output, denied actions, wrong attribution, source/snapshot edits, cached-result tampering, check failures, duplicate requests, timeouts, context bounds, model selection and raw provenance validation.
+- Existing app checks: typecheck and lint passed; **22/22 behavior tests passed**. The first restricted run could not bind three temporary loopback servers (`EPERM`); the complete suite passed when local port access was allowed. These app tests use mocked provider responses.
+- Real reviewer integration: official Antigravity CLI **1.4.4**, official archive SHA-512 verified, existing account authentication. A synthetic numerical-addition change and genuine test logs produced a validated **PASS** for the exact temporary base/head and both acceptance criteria. This verifies transport/schema/evidence integration, not review quality on all application changes.
+- Early live attempts with a denied terminal action or invalid arguments were recorded as INCOMPLETE. The final adapter supplies bounded frozen code/test context, uses the CLI sandbox, and does not change global permissions or use a permission-bypass flag.
+- Historical harness implementation review: **PASS**, no findings, all three acceptance criteria met. Reviewed temporary candidate `55ad50f7df758a5e14f2c8d8a9db65a2b529477f` against base `7eef51b2d8188116de25f828dc2e2484cbf75f39`, with the then-current 21-test harness check captured by the runner. This preceded the model pin and final documentation updates; it does not cover the current complete change. App checks above were run separately against unchanged application source. The earlier CLI calls did not specify or record a model, so the model used cannot be established.
+- Current reviewer policy: `claude-opus-4-6-thinking`, confirmed available in the signed-in CLI catalog on 2026-10-21. A live stream-format probe returned this exact model in `init.model`; the CLI rejected a separate effort override, which is therefore omitted. The runner now checks CLI `init.model` and retains requested/reported selection. This is CLI provenance, not independent server attestation.
+- Completed tooling integration review before the scope-policy follow-up: **PASS**, no findings, all five criteria met, all 14 changed files reviewed. Temporary candidate `c53f783cc2b619668c06232bda01452583e1f4b7` against base `7eef51b2d8188116de25f828dc2e2484cbf75f39`; all four checks passed (harness 26/26, typecheck, lint, app tests 22/22). CLI requested/reported model both matched `claude-opus-4-6-thinking`. The owner working files matched the candidate; the owner checkout was not committed or pushed.
+
+The later scope-policy change updates documentation and its task brief only. It is a routine review from the completed candidate above, using `harness/tasks/review-scope-policy.json` and the harness check. Earlier app checks retain their original attribution; they are not presented as rerun against that follow-up. Its generated review report supplies the follow-up outcome separately. The runner, application, server, model selection and dependencies are unchanged by this policy update.
+
+The completed integration review used all four required checks in `harness/tasks/review-harness.json`; this brief is retained for feature-wide review. Generated `harness/runs/<run_id>/result.json` / `report.md` records are the authoritative outcomes for their respective ranges. For an owner-controlled manual commit, evidence is created in independent temporary candidates and accompanied by changed-file hashes. Their commit identities differ from the owner's later commit.
+
+The coordinator is the current Codex chat following `AGENTS.md`; CLI review execution and result validation are implemented, while unattended implementation/CI enforcement are not. See [commands and limits](../../harness/README.md). The app's mobile UI, API contract and journal storage are unchanged by this developer-tooling task.
 
 ## Current rename and English transition
 

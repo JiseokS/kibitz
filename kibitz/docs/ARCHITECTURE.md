@@ -99,3 +99,7 @@ The client may read `EXPO_PUBLIC_API_URL` as its initial origin. The optional ac
 ## Mobile workflow
 
 `npm start` starts Metro for devices/development clients; opening a web page is unnecessary. Local `ios`/`android` commands need configured platform tools. `export:mobile` builds platform JavaScript/Hermes bundles. EAS creates installation builds separately and requires project/signing ownership. Nothing in export or tests deploys the API or submits a store release.
+
+## Development review tooling — 2026-10-21
+
+The repository-level `scripts/review.mjs` coordinates committed-change reviews without changing the mobile/API runtime. It captures allowlisted checks against a clean exact source HEAD, creates an independent clone without a remote, supplies frozen code/test evidence to Antigravity CLI, and validates structured review results plus source/snapshot integrity. The committed `harness/reviewer.json` selects Claude Opus 4.6 Thinking; matching CLI model-selection evidence is required. The current Codex chat handles implementation and up to two repair cycles. Owner-controlled pre-commit reviews use independent temporary candidate commits and file hashes. The runner makes no merge/push decisions. Runtime artifacts are ignored under `harness/runs/`; see [the harness guide](../../harness/README.md).

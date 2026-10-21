@@ -1,5 +1,16 @@
 # Changelog
 
+## Development review tooling — 2026-10-21
+
+- Set Codex as the implementer and Antigravity as the independent reviewer.
+- Added a local review runner, strict result schema, task brief and diagnostics.
+- Added real check capture, independent review copies, stale-result/edit detection, bounded processes, attempt limits and behavior tests.
+- Kept runtime evidence local and distinguished execution success, review findings and incomplete verification.
+- Pinned Claude Opus 4.6 Thinking, validated CLI-reported model selection, and preserved raw model provenance for cached results.
+- Documented temporary-candidate review when the owner chooses to commit and push manually.
+- Defined routine reviews of the latest increment and affected dependencies/tests, with full feature-range integration review at completion and checks selected by impact.
+- Recorded Korean as the owner's communication language while retaining English product copy and repository documentation.
+
 ## Unreleased — 2026-10-19
 
 - Chose **Kibitz** as the product name and renamed the project directory, npm identity, Expo name/slug/scheme and provisional native identifiers.

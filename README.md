@@ -13,7 +13,7 @@ The feature tables below describe the implemented prototype. The review document
 
 - [Design review](kibitz/docs/planning/DESIGN_REVIEW.md): product, interaction, contracts, failure behavior and acceptance criteria.
 - [Decision workbook](kibitz/docs/planning/DECISIONS_WORKBOOK.md): nine confirmed choices and editable remaining decisions.
-- [Delivery and review plan](kibitz/docs/planning/DELIVERY_PLAN.md): scoped tasks, verification and Cursor/Antigravity handoffs.
+- [Delivery and review plan](kibitz/docs/planning/DELIVERY_PLAN.md): scoped tasks, verification and Codex/Antigravity handoffs.
 
 <!-- kibitz-design-review:end -->
 
@@ -92,6 +92,23 @@ Optional app configuration is in `kibitz/.env.example`; only public configuratio
 
 See [architecture and API contracts](kibitz/docs/ARCHITECTURE.md) for limits, errors, storage and migration details.
 
+## Development review
+
+Codex implements and tests each scoped task; Antigravity reviews the fixed commit range through the local CLI runner. The current Codex chat invokes the runner and reads its result, so manual copying between the two apps is unnecessary once CLI authentication is ready.
+
+The committed reviewer policy selects **Claude Opus 4.6 (Thinking)**. Reviews record the requested model and the CLI-reported model; missing or mismatched selection is incomplete. Earlier reviews without model provenance do not establish which model ran. The owner may retain manual commit/push control; pre-commit reviews use an independent temporary candidate with file hashes.
+
+Routine reviews cover the latest changed code and its affected dependencies/tests. At feature completion, review the full range from the recorded feature start through the latest head, including integration and failure paths. The coordinator selects the range and context explicitly; see [review scope and check selection](harness/README.md#review-scope-and-check-selection).
+
+From the repository root:
+
+```sh
+node scripts/review.mjs doctor
+node --test scripts/review.test.mjs
+```
+
+A task's review uses `prepare --base <base-commit> --task harness/tasks/<task>.json`, followed by `run --run <returned-id>`. The runner records real checks, creates an independent review copy, validates the review verdict and rejects stale or altered evidence. It does not merge or push. See the [workflow diagram](harness/README.md#workflow-at-a-glance) and [setup, commands and limits](harness/README.md).
+
 ## Checks and internal builds
 
 From `kibitz/`:
@@ -119,6 +136,7 @@ These require an Expo account/project, signing setup as applicable and explicit 
 | Document | Purpose |
 | --- | --- |
 | [AGENTS.md](AGENTS.md) | Workspace-wide Codex rules, product invariants and completion criteria |
+| [Review harness](harness/README.md) | Codex/Antigravity setup, executable commands, outcomes and evidence |
 | [Implementation rules](kibitz/AGENTS.md) | Expo conventions, commands and source layout |
 | [Product rules](kibitz/docs/PRODUCT.md) | Behavior, language, frameworks, scoring and philosophy-map rules |
 | [Roadmap](kibitz/docs/ROADMAP.md) | Ordered next work, acceptance criteria and deferred scope |

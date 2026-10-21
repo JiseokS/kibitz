@@ -4,3 +4,6 @@
 # local env files
 .env
 .env*.local
+
+# Local review evidence, snapshots and provider diagnostics
+/harness/runs/

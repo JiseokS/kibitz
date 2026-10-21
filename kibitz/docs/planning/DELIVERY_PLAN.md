@@ -52,7 +52,7 @@ Each card should become a separate reviewable change or a small, explicitly link
 
 ### T01 — define phase-specific scoreless contracts
 
-**Owner:** Cursor. **Depends on:** T00's core scope.
+**Owner:** Codex. **Depends on:** T00's core scope.
 
 - Define a scoreless perspective with stable philosopher ID, verdict, reasoning, question and per-lens next step.
 - Define a primary response for exactly the requested philosopher.
@@ -66,7 +66,7 @@ Each card should become a separate reviewable change or a small, explicitly link
 
 ### T02 — add provider phases and HTTP boundaries
 
-**Owner:** Cursor. **Depends on:** T01.
+**Owner:** Codex. **Depends on:** T01.
 
 - Build separate trusted primary and remaining prompt paths, with English output and actual framework distinctions.
 - Require a specific action proposal for each philosopher; remove generated numerical grades.
@@ -80,7 +80,7 @@ Each card should become a separate reviewable change or a small, explicitly link
 
 ### T03 — evolve the local journal before partial writes
 
-**Owner:** Cursor. **Depends on:** T01.
+**Owner:** Codex. **Depends on:** T01.
 
 - Add a versioned reader for old complete scored records and new partial scoreless records.
 - Preserve original input, evaluation content, IDs, timestamps, source and explicit votes. Historical scores remain legacy data and are not displayed as new product scores.
@@ -94,7 +94,7 @@ Each card should become a separate reviewable change or a small, explicitly link
 
 ### T04 — implement the application-level evaluation coordinator
 
-**Owner:** Cursor. **Depends on:** T02 and T03.
+**Owner:** Codex. **Depends on:** T02 and T03.
 
 - Snapshot the submitted text/category/primary choice under one entry identity.
 - Run one primary operation, validate it, save it, then start one remaining batch.
@@ -109,7 +109,7 @@ Each card should become a separate reviewable change or a small, explicitly link
 
 ### T05 — build the chosen-first result experience
 
-**Owner:** Cursor. **Depends on:** T01 and T04; use fixtures while integrating.
+**Owner:** Codex. **Depends on:** T01 and T04; use fixtures while integrating.
 
 - Add explicit per-entry philosopher selection and a contextual submit label.
 - Present one philosopher's verdict, reasoning, question and next step.
@@ -124,7 +124,7 @@ Each card should become a separate reviewable change or a small, explicitly link
 
 ### T06 — complete comparison and demo consistency
 
-**Owner:** Cursor. **Depends on:** T04 and T05.
+**Owner:** Codex. **Depends on:** T04 and T05.
 
 - Add a collapsed comparison section: main tension, criterion differences, uncertainty and combined action.
 - Keep it incomplete/preparing if required perspectives are missing; do not fabricate agreement.
@@ -136,7 +136,7 @@ Each card should become a separate reviewable change or a small, explicitly link
 
 ### T07 — preserve a writing session
 
-**Owner:** Cursor. **Depends on:** T00's input choice and T05.
+**Owner:** Codex. **Depends on:** T00's input choice and T05.
 
 - Persist draft text, category and chosen primary philosopher locally.
 - Define clear-on-successful-primary-save, deliberate discard, error and restart behavior.
@@ -147,7 +147,7 @@ Each card should become a separate reviewable change or a small, explicitly link
 
 ### T08 — run a small real-call content/performance evaluation
 
-**Owner:** founder with Cursor execution; Antigravity reviews evidence. **Depends on:** working M2, configured key and an explicit experiment budget.
+**Owner:** founder with Codex execution; Antigravity reviews evidence. **Depends on:** working M2, configured key and an explicit experiment budget.
 
 - Use fictional scenarios first; do not commit genuine journal text or keys.
 - Compare matched output requirements under all-at-once and progressive generation, rather than comparing a long baseline with a deliberately shorter new answer and attributing everything to orchestration.
@@ -159,7 +159,7 @@ Each card should become a separate reviewable change or a small, explicitly link
 
 ### T09 — verify on the founder's actual mobile device
 
-**Owner:** founder, assisted by Cursor. **Depends on:** D11 and M2.
+**Owner:** founder, assisted by Codex. **Depends on:** D11 and M2.
 
 - Entry → first take → reading while completion runs → switch early/late → expand comparison.
 - Relaunch and reopen a partially and fully completed reflection.
@@ -180,25 +180,29 @@ Each card should become a separate reviewable change or a small, explicitly link
 
 **Done when:** there is a specific next product decision, not just a feature wish list.
 
-## 4. Cursor / Antigravity harness
+## 4. Codex / Antigravity harness
 
-This is the operating design. The corresponding automated CI, tool adapters and review skills are not created by this planning task.
+The local review adapter, task/result contracts, tests and coordinator rules are implemented as of 2026-10-21. See [the executable harness guide](../../../harness/README.md). CLI installation/authentication and live evidence are environment checks; CI enforcement and a standalone implementation daemon remain separate work.
+
+The reviewer policy pins Claude Opus 4.6 Thinking and requires matching CLI model-selection evidence. The owner may keep commit/push manual: use an independent temporary candidate and changed-file hashes for a pre-commit review, then prepare again after the owner's commit if an exact final-HEAD verdict is required.
+
+Routine reviews cover the latest increment plus affected dependencies and tests. At feature completion, review the full feature-start-to-head range with integration/failure evidence. Select checks by impact and keep earlier results attributed to their actual revision; a documentation follow-up does not automatically rerun the unchanged app suite. The coordinator uses the existing base/context controls; see [scope and check selection](../../../harness/README.md#review-scope-and-check-selection).
 
 ### Shared context
 
 - Common `AGENTS.md` and accepted product/architecture rules.
 - This review package while target behavior is being decided.
 - A task brief containing the selected card, acceptance IDs, non-goals and required checks.
-- Tool-specific role instructions: Cursor implements; Antigravity reviews independently. Neither gets to silently redefine the product.
+- Tool-specific role instructions: Codex implements; Antigravity reviews independently. Neither gets to silently redefine the product.
 
 ### One change cycle
 
 1. Founder selects one task and acceptance criteria.
-2. Cursor implements and tests a scoped change.
-3. Cursor commits and hands off base/head revisions, changed contracts, check evidence and gaps.
+2. Codex implements and tests a scoped change.
+3. Codex commits and hands off base/head revisions, changed contracts, check evidence and gaps.
 4. Antigravity reviews a clean checkout of the same head, inspecting source and relevant tests instead of trusting the summary.
 5. Findings include severity, file/line, triggering case, expected/actual behavior and evidence. Unsupported suspicions are labeled rather than promoted as facts.
-6. Cursor fixes or provides counter-evidence for findings. New code means a new head and an updated review.
+6. Codex fixes or provides counter-evidence for findings. New code means a new head and an updated review.
 7. Merge only after required checks and acceptance criteria are met and serious unresolved findings are addressed. The founder owns the merge decision.
 
 A review result is `PASS`, `CHANGES_REQUIRED` or `INCOMPLETE`, and always names the exact reviewed revision. If required checks could not run, record why; do not turn an incomplete review into a pass. Tool instructions express a role; repository permissions and required CI checks are separate enforcement mechanisms.
@@ -240,7 +244,7 @@ Acceptance criteria still unmet:
 Remaining verification:
 ```
 
-Keep the first implementation/review exchanges human-mediated. Automating CLI dispatch and CI is a separate task after this protocol proves useful; no cross-app messaging or cloud agent run is implied here.
+The current Codex chat invokes the local runner, reads the validated result and handles supported fixes. This is a local CLI handoff, not an always-on daemon. The owner retains scope and merge decisions. Required CI checks and unattended implementation are separate extensions.
 
 ## 5. Requirement-to-verification map
 
