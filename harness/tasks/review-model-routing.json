@@ -1,0 +1,32 @@
+{
+  "id": "review-model-routing",
+  "goal": "Add conservative complexity-aware review selection: Codex records a risk assessment, small documentation-only routine changes may use Sonnet, and uncertain, medium/high, sensitive or integration work uses Opus without quota-based fallback.",
+  "review": {
+    "complexity": "high",
+    "scope": "integration",
+    "reason": "This complete harness feature changes the reviewer trust policy, frozen model selection, integrity and saved-evidence validation; it requires the stronger reviewer."
+  },
+  "acceptance": [
+    {
+      "id": "ROUTE01",
+      "description": "Only a documented low-risk routine assessment and small regular-text documentation-only scope may select Sonnet. Missing/medium/high assessment, integration scope, runtime/security/tooling/configuration context, large scope and unusual changes select Opus. The current task brief remains reviewed."
+    },
+    {
+      "id": "ROUTE02",
+      "description": "Model selection is frozen from the committed policy, task and complete base/head diff; preparation and reports expose reasons. Run/status rederive selection and reject changed assessment/model evidence, mismatched CLI model or missing provenance. Valid historical fixed-policy runs retain their original model evidence."
+    },
+    {
+      "id": "ROUTE03",
+      "description": "The selected model is used once per explicit attempt; quota, unavailable model and execution failures stay INCOMPLETE without silently falling back. Existing stdin privacy, minimal reviewer environment, integrity/check validation, output limits and attempt bounds remain intact."
+    },
+    {
+      "id": "ROUTE04",
+      "description": "Meaningful routing and failure regressions pass, documentation distinguishes Codex semantic judgment from narrow deterministic guards, historical Sonnet/Opus results are accurate, and mobile/API/dependency code remains unchanged."
+    }
+  ],
+  "checks": ["harness", "typecheck", "lint"],
+  "context_files": [
+    "harness/review.schema.json",
+    "harness/tasks/review-harness.json"
+  ]
+}

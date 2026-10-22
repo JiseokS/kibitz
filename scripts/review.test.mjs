@@ -13,6 +13,7 @@ import {
   validateReview,
   parseReviewerStream,
   reviewerEnvironment,
+  selectReviewer,
   doctor,
 } from "./review.mjs";
 
@@ -138,6 +139,7 @@ async function fakeReviewer(f, behavior = {}) {
 const fs = require('node:fs');
 const path = require('node:path');
 const behavior = ${JSON.stringify(behavior)};
+const sourceFile = behavior.sourceFile || 'add.js';
 const args = process.argv.slice(2);
 if (!args.includes('--sandbox') || !args.includes('--json-schema') || (args.includes('--dangerously-skip-permissions') || args.includes('plan'))) throw new Error('Unsafe reviewer arguments');
 const context = JSON.parse(fs.readFileSync('.kibitz-review/context.json', 'utf8'));
@@ -148,16 +150,17 @@ if (lines.length !== 1) throw new Error('Expected one input frame and EOF');
 const frame = JSON.parse(lines[0]);
 if (frame.event !== 'user' || typeof frame.message?.content !== 'string') throw new Error('Invalid input frame');
 const bundle = JSON.parse(frame.message.content.split('SOURCE_BUNDLE_BEGIN\\n')[1].split('\\nSOURCE_BUNDLE_END')[0]);
-if (bundle.head !== context.head || !bundle.files.some(item => item.file === 'add.js')) throw new Error('Missing source context on stdin');
+if (bundle.head !== context.head || !bundle.files.some(item => item.file === sourceFile)) throw new Error('Missing source context on stdin');
 const secretKeys = ['OPENAI_API_KEY','API_ACCESS_TOKEN','SOME_NEW_PROVIDER_SECRET'];
 fs.writeFileSync(${JSON.stringify(path.join(f.parent, "transport.json"))}, JSON.stringify({args, frames:lines.length, hasSource:true, inheritedSecrets:secretKeys.some(key => process.env[key] !== undefined)}));
 fs.appendFileSync(${JSON.stringify(path.join(f.parent, "calls.log"))}, 'called\\n');
 if (behavior.authFailure) { process.stderr.write('authentication required'); process.exit(1); }
+if (behavior.quota) process.stderr.write('Individual quota reached');
 if (behavior.softDenied) process.stderr.write('Tool soft-denied: command requires approval');
 if (behavior.edit) fs.appendFileSync('add.js', '// Unexpected reviewer edit\\n');
 const report = {
 reviewed_base: context.base, reviewed_head: behavior.wrongHead ? '0'.repeat(40) : context.head,
-outcome: 'PASS', summary: 'Reviewed implementation and actual check logs.', files_reviewed: ['add.js'],
+outcome: 'PASS', summary: 'Reviewed implementation and actual check logs.', files_reviewed: [sourceFile],
 acceptance: context.task.acceptance.map(c => ({ id: c.id, status: 'met', evidence: 'Inspected add.js and check evidence.' })), findings: []
 };
 if (behavior.omitCriterion) report.acceptance.pop();
@@ -170,6 +173,261 @@ else console.log(JSON.stringify({event:'result',result:{status: behavior.status 
   await fs.writeFile(bin, code, { mode: 0o700 });
   return bin;
 }
+
+const routedPolicy = {
+  model: "claude-opus-4-6-thinking",
+  routing: { simple_model: "claude-sonnet-4-6" },
+};
+const lowAssessment = {
+  complexity: "low",
+  scope: "routine",
+  reason:
+    "Only correct an introductory documentation typo; no runtime or policy behavior changes.",
+};
+
+async function routedFixture(
+  t,
+  { review = lowAssessment, edit, baseline, contextFiles } = {},
+) {
+  const f = await fixture(t);
+  await fs.writeFile(
+    path.join(f.repo, "harness/reviewer.json"),
+    JSON.stringify(routedPolicy),
+  );
+  await fs.writeFile(path.join(f.repo, "README.md"), "Before documentation.\n");
+  if (baseline) await baseline(f);
+  git(f.repo, "add", ".");
+  git(f.repo, "commit", "--quiet", "-m", "Configure routing baseline");
+  f.base = git(f.repo, "rev-parse", "HEAD");
+  if (review !== null) f.task.review = structuredClone(review);
+  if (contextFiles) f.task.context_files = contextFiles;
+  await fs.writeFile(
+    path.join(f.repo, "harness/tasks/task.json"),
+    JSON.stringify(f.task),
+  );
+  await fs.appendFile(
+    path.join(f.repo, "README.md"),
+    "Clarified documentation.\n",
+  );
+  if (edit) await edit(f);
+  git(f.repo, "add", ".");
+  git(f.repo, "commit", "--quiet", "-m", "Routed review change");
+  f.head = git(f.repo, "rev-parse", "HEAD");
+  return f;
+}
+
+test("routing is conservative about assessment, context, scope, size and unusual changes", () => {
+  const changes = {
+    files: ["README.md", "harness/tasks/task.json"],
+    changed_lines: 20,
+    unusual: false,
+  };
+  const task = { review: lowAssessment };
+  const select = (value = task, diff = changes) =>
+    selectReviewer(routedPolicy, value, "harness/tasks/task.json", diff);
+  assert.equal(select().reviewer.model, "claude-sonnet-4-6");
+  const risky = [
+    {},
+    { review: { ...lowAssessment, complexity: "medium" } },
+    { review: { ...lowAssessment, complexity: "high" } },
+    { review: { ...lowAssessment, scope: "integration" } },
+    { ...task, context_files: ["kibitz/src/data/repository.ts"] },
+    { ...task, context_files: ["kibitz/server/provider.ts"] },
+    { ...task, context_files: ["AGENTS.md"] },
+    { ...task, context_files: ["harness/reviewer.json"] },
+    { ...task, context_files: ["scripts/review.mjs"] },
+    { ...task, context_files: ["kibitz/src/components/ui.tsx"] },
+    {
+      ...task,
+      context_files: Array.from({ length: 6 }, (_, i) => `kibitz/docs/${i}.md`),
+    },
+  ];
+  for (const value of risky)
+    assert.equal(select(value).reviewer.model, routedPolicy.model);
+  for (const diff of [
+    { ...changes, changed_lines: 201 },
+    { ...changes, unusual: true },
+    { ...changes, files: ["kibitz/package-lock.json"] },
+    { ...changes, files: ["harness/tasks/another-task.json"] },
+  ])
+    assert.equal(select(task, diff).reviewer.model, routedPolicy.model);
+  assert.equal(
+    selectReviewer(
+      { model: "fixed-model" },
+      task,
+      "harness/tasks/task.json",
+      changes,
+    ).reviewer.model,
+    "fixed-model",
+  );
+});
+
+test("small documented routine change selects Sonnet and records actual model and reasons", async (t) => {
+  const f = await routedFixture(t),
+    run = await makeRun(f);
+  assert.equal(run.reviewer.model, "claude-sonnet-4-6");
+  assert.equal(run.selection.tier, "simple");
+  assert.deepEqual(run.selection.assessment, lowAssessment);
+  assert.ok(run.selection.changes.files.includes("harness/tasks/task.json"));
+  const result = await runReview(f.repo, run.run_id, {
+    bin: await fakeReviewer(f, { sourceFile: "README.md" }),
+  });
+  assert.equal(result.outcome, "PASS");
+  assert.equal(result.provenance.reported_model, "claude-sonnet-4-6");
+  assert.deepEqual(result.selection, run.selection);
+  assert.match(
+    await fs.readFile(path.join(run.dir, "report.md"), "utf8"),
+    /Selection tier: simple/,
+  );
+  assert.equal((await status(f.repo, run.run_id)).outcome, "PASS");
+});
+
+test("omitted assessment and misleading low-risk assessment of runtime changes both select Opus", async (t) => {
+  for (const options of [
+    { review: null },
+    {
+      edit: async (f) =>
+        fs.appendFile(path.join(f.repo, "add.js"), "// Runtime change.\n"),
+    },
+  ]) {
+    const f = await routedFixture(t, options),
+      run = await makeRun(f);
+    assert.equal(run.reviewer.model, "claude-opus-4-6-thinking");
+    assert.equal(run.selection.tier, "strong");
+  }
+});
+
+test("renames across boundaries and binary or symlink documentation cannot take the simple route", async (t) => {
+  for (const edit of [
+    async (f) => {
+      await fs.mkdir(path.join(f.repo, "kibitz/server"), { recursive: true });
+      await fs.rename(
+        path.join(f.repo, "README.md"),
+        path.join(f.repo, "kibitz/server/README.md"),
+      );
+    },
+    async (f) => fs.appendFile(path.join(f.repo, "README.md"), "\0binary\n"),
+    async (f) => {
+      await fs.unlink(path.join(f.repo, "README.md"));
+      await fs.symlink("add.js", path.join(f.repo, "README.md"));
+    },
+  ]) {
+    const f = await routedFixture(t, { edit }),
+      run = await makeRun(f);
+    assert.equal(run.reviewer.model, "claude-opus-4-6-thinking");
+    assert.equal(run.selection.changes.unusual, true);
+  }
+});
+
+test("review assessments reject missing, blank and unsupported metadata before checks", async (t) => {
+  for (const review of [
+    { complexity: "low", scope: "routine" },
+    { ...lowAssessment, reason: " ".repeat(30) },
+    { ...lowAssessment, complexity: "trivial" },
+    { ...lowAssessment, model: "unapproved-model" },
+  ]) {
+    const f = await routedFixture(t, { review });
+    await assert.rejects(
+      makeRun(f),
+      /required|substantive|invalid enum|unexpected property/,
+    );
+  }
+});
+
+test("unchanged binary and symlink context also raises a documentation review to Opus", async (t) => {
+  for (const binary of [true, false]) {
+    const f = await routedFixture(t, {
+      contextFiles: ["kibitz/docs/context.md"],
+      baseline: async (value) => {
+        await fs.mkdir(path.join(value.repo, "kibitz/docs"), {
+          recursive: true,
+        });
+        const target = path.join(value.repo, "kibitz/docs/context.md");
+        if (binary) await fs.writeFile(target, "Binary\0context");
+        else await fs.symlink("../../README.md", target);
+      },
+    });
+    const run = await makeRun(f);
+    assert.equal(run.reviewer.model, "claude-opus-4-6-thinking");
+    assert.equal(run.selection.changes.unusual, true);
+    assert.ok(!run.selection.changes.files.includes("kibitz/docs/context.md"));
+  }
+});
+
+test("selection and assessment tampering cannot change a frozen model or cached verdict", async (t) => {
+  const f = await routedFixture(t),
+    run = await makeRun(f);
+  await runReview(f.repo, run.run_id, {
+    bin: await fakeReviewer(f, { sourceFile: "README.md" }),
+  });
+  const manifestFile = path.join(run.dir, "manifest.json");
+  for (const mutate of [
+    (value) => {
+      value.reviewer.model = "claude-opus-4-6-thinking";
+    },
+    (value) => {
+      value.task.review.reason =
+        "A changed assessment that is not in the frozen task.";
+    },
+    (value) => {
+      value.selection.tier = "strong";
+    },
+    (value) => {
+      value.version = 2;
+    },
+  ]) {
+    const value = structuredClone(run.manifest);
+    mutate(value);
+    await fs.writeFile(manifestFile, JSON.stringify(value));
+    assert.equal((await status(f.repo, run.run_id)).outcome, "INCOMPLETE");
+  }
+  await fs.writeFile(manifestFile, JSON.stringify(run.manifest));
+  const resultFile = path.join(run.dir, "result.json"),
+    result = await read(resultFile);
+  result.selection.reasons = ["Forged model selection"];
+  await fs.writeFile(resultFile, JSON.stringify(result));
+  assert.equal((await status(f.repo, run.run_id)).outcome, "INCOMPLETE");
+});
+
+test("quota error with the strong route makes one request and never falls back to Sonnet", async (t) => {
+  const f = await routedFixture(t, {
+    review: { ...lowAssessment, complexity: "high" },
+  });
+  const run = await makeRun(f);
+  const result = await runReview(f.repo, run.run_id, {
+    bin: await fakeReviewer(f, {
+      sourceFile: "README.md",
+      quota: true,
+      status: "ERROR",
+    }),
+  });
+  assert.equal(run.reviewer.model, "claude-opus-4-6-thinking");
+  assert.equal(result.outcome, "INCOMPLETE");
+  assert.equal(
+    (await fs.readFile(path.join(f.parent, "calls.log"), "utf8")).trim(),
+    "called",
+  );
+  assert.equal(result.selection.tier, "strong");
+});
+
+test("legacy fixed-policy evidence remains readable without routing metadata", async (t) => {
+  const f = await fixture(t),
+    run = await makeRun(f);
+  const result = await runReview(f.repo, run.run_id, {
+    bin: await fakeReviewer(f),
+  });
+  const manifest = structuredClone(run.manifest);
+  manifest.version = 2;
+  delete manifest.selection;
+  delete manifest.task_path;
+  delete result.selection;
+  await fs.writeFile(
+    path.join(run.dir, "manifest.json"),
+    JSON.stringify(manifest),
+  );
+  await fs.writeFile(path.join(run.dir, "result.json"), JSON.stringify(result));
+  assert.equal((await status(f.repo, run.run_id)).outcome, "PASS");
+});
 
 test("prepare freezes exact commits, captures real checks, and removes snapshot remotes", async (t) => {
   const f = await fixture(t),

@@ -16,7 +16,7 @@
     },
     {
       "id": "A04",
-      "description": "The committed reviewer policy explicitly selects the owner-approved default model, records requested and CLI-reported model selection, and rejects missing or mismatched model evidence without automatic fallback."
+      "description": "The committed reviewer policy conservatively selects an owner-approved model from the task assessment and complete diff/context, records reasons and requested/CLI-reported selection, and rejects altered, missing or mismatched model evidence without quota-based fallback."
     },
     {
       "id": "A05",

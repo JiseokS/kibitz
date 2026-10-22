@@ -1,5 +1,12 @@
 # Changelog
 
+## Conservative reviewer routing — 2026-10-22
+
+- Added committed task complexity/scope/reason assessments, with Opus for uncertain, medium/high, runtime/configuration and integration work.
+- Limited Sonnet to explicitly low-risk small documentation-only routine scopes; complete diff/context, size, binary and file-mode guards can only raise the choice.
+- Froze selected model/reasons in version 3 manifests and reports, rederived them during run/status, and kept valid historical fixed-policy evidence readable.
+- Preserved stdin privacy, environment filtering and model provenance validation; quota/execution failures remain incomplete without automatic downgrade.
+
 ## Default reviewer model — 2026-10-22
 
 - Changed the default reviewer to owner-approved Claude Sonnet 4.6 Thinking (`claude-sonnet-4-6`) after the Opus security review was interrupted by the account quota.

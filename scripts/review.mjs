@@ -179,6 +179,158 @@ function validateReviewer(reviewer) {
   });
 }
 
+function validateReviewerPolicy(policy) {
+  validateSchema(policy, {
+    type: "object",
+    required: ["model"],
+    additionalProperties: false,
+    properties: {
+      model: { type: "string", pattern: "^[a-z0-9][a-z0-9-]{0,99}$" },
+      routing: {
+        type: "object",
+        required: ["simple_model"],
+        additionalProperties: false,
+        properties: {
+          simple_model: {
+            type: "string",
+            pattern: "^[a-z0-9][a-z0-9-]{0,99}$",
+          },
+        },
+      },
+    },
+  });
+  if (policy.routing?.simple_model === policy.model)
+    throw new Error("Routing models must be distinct");
+}
+
+// Codex assesses semantics; these deliberately narrow guards can only raise risk.
+export function selectReviewer(policy, task, taskPath, changes) {
+  validateReviewerPolicy(policy);
+  const reasons = [];
+  const assessment = task.review || null;
+  if (!policy.routing)
+    reasons.push("Fixed model policy; no routing configured.");
+  else {
+    if (!assessment || assessment.complexity !== "low")
+      reasons.push(
+        "Assessment is missing, medium or high; use the stronger default.",
+      );
+    if (assessment?.scope !== "routine")
+      reasons.push(
+        "Integration or unspecified review scope requires the stronger default.",
+      );
+    const documentation = (file) =>
+      file === "README.md" ||
+      (/^kibitz\/docs\/.+\.md$/.test(file) && !file.endsWith("/AGENTS.md"));
+    const brief = (file) =>
+      file === taskPath && /^harness\/tasks\/[a-z0-9-]+\.json$/.test(file);
+    const affected = [
+      ...new Set([...changes.files, ...(task.context_files || [])]),
+    ];
+    if (affected.some((file) => !documentation(file) && !brief(file)))
+      reasons.push(
+        "Code, tooling, configuration or other non-documentation context requires the stronger default.",
+      );
+    if (affected.length > 5 || changes.changed_lines > 200)
+      reasons.push("Scope exceeds five affected files or 200 changed lines.");
+    if (changes.unusual)
+      reasons.push(
+        "Binary content, deletion or file-mode change requires the stronger default.",
+      );
+  }
+  const simple = Boolean(policy.routing && reasons.length === 0);
+  if (simple)
+    reasons.push(
+      "Explicit low-risk routine assessment; small documentation-only scope and task brief.",
+    );
+  return {
+    reviewer: { model: simple ? policy.routing.simple_model : policy.model },
+    selection: {
+      tier: policy.routing ? (simple ? "simple" : "strong") : "fixed",
+      assessment,
+      reasons,
+      changes,
+    },
+  };
+}
+
+async function changeSummary(repo, base, head, contextFiles = []) {
+  const stats = (
+    await git(
+      repo,
+      "diff",
+      "--no-ext-diff",
+      "--no-textconv",
+      "--numstat",
+      "--no-renames",
+      "-z",
+      base,
+      head,
+      "--",
+    )
+  )
+    .split("\0")
+    .filter(Boolean);
+  const files = [];
+  let changedLines = 0,
+    unusual = false;
+  for (const stat of stats) {
+    const match = /^(\d+|-)\t(\d+|-)\t([\s\S]+)$/.exec(stat);
+    if (!match) throw new Error("Cannot classify changed files safely");
+    files.push(match[3]);
+    if (match[1] === "-" || match[2] === "-") unusual = true;
+    else changedLines += Number(match[1]) + Number(match[2]);
+  }
+  const raw = (
+    await git(
+      repo,
+      "diff",
+      "--no-ext-diff",
+      "--no-textconv",
+      "--raw",
+      "--no-renames",
+      "-z",
+      base,
+      head,
+      "--",
+    )
+  )
+    .split("\0")
+    .filter(Boolean);
+  for (let i = 0; i < raw.length; i += 2) {
+    const modes = /^:(\d{6}) (\d{6}) [a-f0-9]+ [a-f0-9]+ ([AMDT])$/.exec(
+      raw[i],
+    );
+    if (!modes || !raw[i + 1])
+      throw new Error("Cannot classify changed file modes safely");
+    if (
+      !["000000", "100644"].includes(modes[1]) ||
+      modes[2] !== "100644" ||
+      !["A", "M"].includes(modes[3])
+    )
+      unusual = true;
+  }
+  if (!files.length || files.some((file) => !safePath(file)))
+    throw new Error("Review needs safely named changed files");
+  for (const file of new Set(contextFiles)) {
+    let tree = await git(repo, "ls-tree", head, "--", file),
+      ref = head;
+    if (!tree) {
+      tree = await git(repo, "ls-tree", base, "--", file);
+      ref = base;
+    }
+    if (!/^100644 blob [a-f0-9]+\t/.test(tree)) unusual = true;
+    if (
+      !tree ||
+      (await git(repo, "cat-file", "-t", `${ref}:${file}`)) !== "blob"
+    )
+      throw new Error(`Review context must name a tracked file: ${file}`);
+    if ((await git(repo, "show", `${ref}:${file}`)).includes("\0"))
+      unusual = true;
+  }
+  return { files: files.sort(), changed_lines: changedLines, unusual };
+}
+
 // stream-json exposes the CLI's selected model; plain JSON does not.
 export function parseReviewerStream(stdout, reviewer) {
   validateReviewer(reviewer);
@@ -351,6 +503,19 @@ function validateTask(task) {
       !task.context_files.every(safePath))
   )
     throw new Error("Invalid task context_files");
+  if (task.review !== undefined)
+    validateSchema(task.review, {
+      type: "object",
+      required: ["complexity", "scope", "reason"],
+      additionalProperties: false,
+      properties: {
+        complexity: { type: "string", enum: ["low", "medium", "high"] },
+        scope: { type: "string", enum: ["routine", "integration"] },
+        reason: { type: "string", minLength: 20, maxLength: 1000 },
+      },
+    });
+  if (task.review && task.review.reason.trim().length < 20)
+    throw new Error("Review assessment needs a substantive reason");
 }
 
 async function runDirectory(repo, id) {
@@ -385,10 +550,15 @@ export async function prepare(repo, { base, head = "HEAD", task: taskPath }) {
     throw new Error("Task must be a repository-relative path");
   const task = JSON.parse(await git(repo, "show", `${headSha}:${taskPath}`));
   validateTask(task);
-  const reviewer = JSON.parse(
+  const policy = JSON.parse(
     await git(repo, "show", `${headSha}:${reviewerPath}`),
   );
-  validateReviewer(reviewer);
+  const { reviewer, selection } = selectReviewer(
+    policy,
+    task,
+    taskPath,
+    await changeSummary(repo, baseSha, headSha, task.context_files),
+  );
   const id =
     new Date()
       .toISOString()
@@ -399,13 +569,15 @@ export async function prepare(repo, { base, head = "HEAD", task: taskPath }) {
   const dir = await runDirectory(repo, id);
   await fs.mkdir(dir, { mode: 0o700 });
   const manifest = {
-    version: 2,
+    version: 3,
     id,
     repository: repo,
     base: baseSha,
     head: headSha,
     task,
+    task_path: taskPath,
     reviewer,
+    selection,
     checks: [],
     created_at: new Date().toISOString(),
   };
@@ -464,7 +636,9 @@ export async function prepare(repo, { base, head = "HEAD", task: taskPath }) {
       base: baseSha,
       head: headSha,
       task,
+      task_path: taskPath,
       reviewer,
+      selection,
       checks: manifest.checks,
     });
     for (const check of task.checks) {
@@ -501,6 +675,8 @@ export async function prepare(repo, { base, head = "HEAD", task: taskPath }) {
     run_id: id,
     base: baseSha,
     head: headSha,
+    reviewer,
+    selection,
     checks: manifest.checks,
     next: `node scripts/review.mjs run --run ${id}`,
   };
@@ -525,7 +701,7 @@ export async function doctor() {
   const reviewer = await json(
     new URL("../harness/reviewer.json", import.meta.url),
   );
-  validateReviewer(reviewer);
+  validateReviewerPolicy(reviewer);
   const [gitResult, agy, codex] = await Promise.all([
     execute(gitBin(), ["--version"], { timeoutMs: 10_000 }),
     tool("agy", "KIBITZ_AGY_BIN", [
@@ -632,8 +808,48 @@ async function integrity(repo, dir, manifest) {
   const policy = JSON.parse(
     await git(snapshot, "show", `${manifest.head}:${reviewerPath}`),
   );
-  validateReviewer(policy);
-  if (policy.model !== manifest.reviewer?.model)
+  validateReviewerPolicy(policy);
+  if (manifest.version === 3) {
+    const context = await json(
+      path.join(snapshot, ".kibitz-review/context.json"),
+    );
+    for (const key of [
+      "base",
+      "head",
+      "task",
+      "task_path",
+      "reviewer",
+      "selection",
+      "checks",
+    ])
+      if (JSON.stringify(context[key]) !== JSON.stringify(manifest[key]))
+        throw new Error("Manifest does not match frozen review context");
+    if (!safePath(manifest.task_path))
+      throw new Error("Invalid frozen task path");
+    const task = JSON.parse(
+      await git(snapshot, "show", `${manifest.head}:${manifest.task_path}`),
+    );
+    validateTask(task);
+    const expected = selectReviewer(
+      policy,
+      task,
+      manifest.task_path,
+      await changeSummary(
+        snapshot,
+        manifest.base,
+        manifest.head,
+        task.context_files,
+      ),
+    );
+    if (
+      JSON.stringify(task) !== JSON.stringify(manifest.task) ||
+      JSON.stringify(expected.reviewer) !== JSON.stringify(manifest.reviewer) ||
+      JSON.stringify(expected.selection) !== JSON.stringify(manifest.selection)
+    )
+      throw new Error(
+        "Reviewer selection does not match the frozen policy, task and diff",
+      );
+  } else if (policy.routing || policy.model !== manifest.reviewer?.model)
     throw new Error("Reviewer policy does not match the frozen head");
   if (
     (await git(snapshot, "rev-parse", "HEAD")) !== manifest.head ||
@@ -648,6 +864,7 @@ async function reviewBundle(snapshot, manifest) {
       snapshot,
       "diff",
       "--name-only",
+      "--no-renames",
       "-z",
       manifest.base,
       manifest.head,
@@ -713,6 +930,7 @@ async function reviewBundle(snapshot, manifest) {
     base: manifest.base,
     head: manifest.head,
     task: manifest.task,
+    selection: manifest.selection,
     checks: manifest.checks,
     logs,
     files,
@@ -881,11 +1099,12 @@ export async function runReview(
     } catch (error) {
       result = { ...result, outcome: "INCOMPLETE", error: error.message };
     }
+    if (manifest.version === 3) result.selection = manifest.selection;
     await save(path.join(dir, "result.json"), result);
     await save(path.join(attemptDir, "result.json"), result);
     await fs.writeFile(
       path.join(dir, "report.md"),
-      `# Antigravity review\n\n- Run: ${id}\n- Head: ${manifest.head}\n- Outcome: **${result.outcome}**\n- Requested model: ${manifest.reviewer?.model || "unverified"}\n- CLI reported model: ${result.provenance?.reported_model || "unverified"}\n\n${result.error || result.review?.summary || ""}\n\nSee result.json for findings and acceptance evidence. Model provenance records CLI selection, not independent server attestation.\n`,
+      `# Antigravity review\n\n- Run: ${id}\n- Head: ${manifest.head}\n- Outcome: **${result.outcome}**\n- Requested model: ${manifest.reviewer?.model || "unverified"}\n- CLI reported model: ${result.provenance?.reported_model || "unverified"}\n- Selection tier: ${manifest.selection?.tier || "legacy fixed"}\n- Assessment: ${manifest.selection?.assessment?.reason || "Not supplied"}\n- Selection reasons: ${manifest.selection?.reasons.join(" ") || "Legacy fixed policy"}\n\n${result.error || result.review?.summary || ""}\n\nSee result.json for findings and acceptance evidence. Model provenance records CLI selection, not independent server attestation.\n`,
       { mode: 0o600 },
     );
     return result;
@@ -902,6 +1121,11 @@ export async function status(repo, id) {
   const result = await json(path.join(dir, "result.json"));
   try {
     await integrity(repo, dir, manifest);
+    if (
+      manifest.version === 3 &&
+      JSON.stringify(result.selection) !== JSON.stringify(manifest.selection)
+    )
+      throw new Error("Saved model-selection evidence changed");
     if (result.review) {
       if (
         !Number.isInteger(result.attempt) ||
