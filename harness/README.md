@@ -1,6 +1,6 @@
 # Codex implementation / Antigravity review
 
-Updated 2026-10-21. Codex is the implementation coordinator in the current chat. Antigravity is an independent reviewer invoked through its official `agy` CLI. The runner is dependency-free Node.js; it does not start a second Codex agent, install Git hooks, merge, push, or monitor the repository.
+Updated 2026-10-22. Codex is the implementation coordinator in the current chat. Antigravity is an independent reviewer invoked through its official `agy` CLI. The runner is dependency-free Node.js; it does not start a second Codex agent, install Git hooks, merge, push, or monitor the repository.
 
 ## Workflow at a glance
 
@@ -9,7 +9,7 @@ flowchart TD
     A["Owner: request and acceptance criteria"] --> B["Codex: implement and test"]
     B --> C["Owner or Codex: freeze a scoped commit as agreed"]
     C --> D["Harness prepare: capture selected checks and freeze the selected range"]
-    D --> E["Antigravity / Opus 4.6 Thinking: review exact base and head"]
+    D --> E["Antigravity / Sonnet 4.6 Thinking: review exact base and head"]
     E --> F{"Harness: validate revision, evidence and verdict"}
     F -->|PASS| G["Owner: final check and merge or push decision"]
     F -->|CHANGES_REQUIRED| H{"Within two repair cycles?"}
@@ -81,7 +81,7 @@ node --test scripts/review.test.mjs
 
 ### Reviewer model policy
 
-`harness/reviewer.json` pins `claude-opus-4-6-thinking`. `prepare` reads this policy from the exact reviewed HEAD, and `run` explicitly passes `--model`. It never falls back to another model. This Thinking model does not support the separate `--effort` flag in CLI 1.4.4, so no effort override is sent. Confirm account availability with `agy models` when setting up or changing this policy; the signed-in account listed this model on 2026-10-21. A missing model, unsupported flag or exhausted allowance requires recovery or an explicit owner decision.
+`harness/reviewer.json` pins `claude-sonnet-4-6` (Claude Sonnet 4.6 Thinking). The owner explicitly changed the default from Opus on 2026-10-22 after a quota-interrupted review. This is a policy change, not an automatic fallback. `prepare` reads the policy from the exact reviewed HEAD, and `run` explicitly passes `--model`. No separate effort override is sent. Confirm account availability with `agy models` when setting up or changing this policy; the signed-in account listed this model on 2026-10-22. A missing model, unsupported flag or exhausted allowance requires recovery or an explicit owner decision. Earlier Opus PASS/INCOMPLETE records keep their original model and outcome.
 
 The runner uses `stream-json`, validates the `init.model` selection and final structured result, and records `requested_model` and `reported_model` in `result.json`. Raw events remain in `attempt-NN/stdout.jsonl`. A missing/mismatched model cannot PASS. The CLI does not attest server-side execution. Saved status revalidates the verdict and model provenance against the raw stream. Older reviews without this provenance cannot serve as pinned-model reviews.
 
@@ -92,6 +92,16 @@ Executable overrides are single paths, never shell fragments:
 - `KIBITZ_AGY_BIN`: the official `agy` executable.
 - `KIBITZ_GIT_BIN`: a working Git executable if the OS Git needs Xcode setup. The harness never accepts OS licenses.
 - `KIBITZ_CODEX_BIN`: optional Codex CLI path for diagnostics.
+
+### Process input and environment
+
+The runner sends one NDJSON `user` message through stdin using `--input-format stream-json`, then closes input. The CLI completes that turn before exiting. Prompts and source/check context are never passed through `-p`, `--print` or `--prompt`, so they do not appear in the reviewer process command line. Stdin delivery errors fail the review; the existing timeout, output bound and result/model validation still apply.
+
+`reviewerEnvironment` in `scripts/review.mjs` is the explicit environment allowlist for reviewer runs and CLI help probes. It retains runtime/search paths, home/config/cache and supported credential-file locations, temporary directories, locale/terminal settings, proxies and CA certificate paths. It drops unknown variables, application/provider API keys, beta access codes, GitHub/AWS tokens, `NODE_OPTIONS` and shell preload settings. The runner uses the parent's executable overrides to locate tools, but does not forward those override variables to the reviewer.
+
+Cached interactive sign-in is the normal authentication path. API keys exported for the application are deliberately not a reviewer authentication path. Required proxy/credential-file settings are intentionally preserved; this is least-privilege environment handling, not protection against a compromised CLI or host. No global permission or authentication settings are changed.
+
+Git commands and required repository checks retain their existing execution environment. Preparation runs owner-trusted repository scripts outside the review CLI sandbox; an allowlisted check ID does not make hostile third-party test/package scripts safe. Their isolation would require a separate execution environment.
 
 The reviewer is invoked with `--sandbox --disable-slash-commands`, a bounded `--print-timeout`, the pinned model policy, and structured NDJSON output. A bounded 120 KB bundle supplies full changed code, test context and actual check logs; changed Markdown is supplied as a diff. Harness tests are included when required. Add optional `context_files` (repository-relative tracked paths) for relevant unchanged application tests or dependencies; running app checks does not automatically bundle the entire unchanged app test suite. Oversized context is INCOMPLETE before any model request. The reviewer is instructed to use supplied evidence or built-in file-reading tools, with no terminal commands required. It does not bypass permission prompts or modify global permissions. Headless tools that cannot obtain permission can be denied even when the process exits zero; denied-tool diagnostics or a nonempty `denied_actions` envelope invalidate the result. Fix only the specific required environment permission, or use manual review with an explicit incomplete automation status.
 

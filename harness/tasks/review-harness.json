@@ -16,7 +16,7 @@
     },
     {
       "id": "A04",
-      "description": "The committed reviewer policy explicitly selects Claude Opus 4.6 Thinking, records requested and CLI-reported model selection, and rejects missing or mismatched model evidence without silent downgrade."
+      "description": "The committed reviewer policy explicitly selects the owner-approved default model, records requested and CLI-reported model selection, and rejects missing or mismatched model evidence without automatic fallback."
     },
     {
       "id": "A05",

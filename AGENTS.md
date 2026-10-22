@@ -54,7 +54,7 @@ These instructions apply to this entire workspace. The runnable project is in `k
 ## Implementation and independent review
 
 - Codex owns implementation, tests and responses to findings. Antigravity is the independent reviewer in this user-requested workflow. Other delegation still requires explicit authorization.
-- Use the committed `harness/reviewer.json` policy: `claude-opus-4-6-thinking`. Never silently downgrade. Require matching CLI-reported model evidence; unavailable models or missing/mismatched evidence mean INCOMPLETE. This records CLI selection, not server attestation.
+- Use the owner-approved default in `harness/reviewer.json`: `claude-sonnet-4-6` (Claude Sonnet 4.6 Thinking), selected on 2026-10-22. Do not switch models as an automatic fallback. Require matching CLI-reported model evidence; unavailable models or missing/mismatched evidence mean INCOMPLETE. This records CLI selection, not server attestation. Historical Opus reviews retain their original attribution.
 - Respect an owner's request to commit/push manually. For a pre-commit review, freeze all intended changes in an independent temporary repository and record file hashes; do not commit in the owner's checkout. Report that the resulting verdict names the temporary commit, not a future owner-created commit.
 - For an implementation task, record agreed scope/acceptance in `harness/tasks/<task>.json`, capture the base revision before coding, and keep the change reviewable. Include the task file in the scoped local commit. Do not push or merge as an incidental review step.
 - Use routine reviews for the latest increment: set `base` to the previous successfully reviewed head of the same feature (or its start commit for the first increment), and include directly affected dependencies, callers, contracts and tests through `context_files`. Review every changed file in the selected range; do not hide changed files to reduce tokens.
@@ -64,6 +64,7 @@ These instructions apply to this entire workspace. The runnable project is in `k
 - Review must cover the exact changed HEAD. Investigate findings, fix supported defects, rerun checks and prepare a new review for the new commit. Limit automatic repair/review cycles to two, then report unresolved findings to the user. The runner separately enforces three reviewer attempts per frozen run.
 - Missing CLI, authentication, denied tools, incomplete checks, stale commits or invalid output mean INCOMPLETE; never substitute a self-review or CLI execution success for an Antigravity PASS. Run `status --run <id>` before relying on a saved verdict.
 - Preserve role separation: the reviewer reports defects and evidence without editing source. Do not disable permission checks, change global reviewer settings, or invent successful verification to unblock a run.
+- Send review source/check context through one framed stdin message and EOF, never through prompt arguments. Use the explicit minimal reviewer environment for both reviewer runs and CLI help probes; do not forward application/API/CI secrets or preload hooks. Required repository checks keep their own environment and remain owner-trusted code execution.
 
 ## Definition of done
 

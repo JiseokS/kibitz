@@ -184,7 +184,7 @@ Each card should become a separate reviewable change or a small, explicitly link
 
 The local review adapter, task/result contracts, tests and coordinator rules are implemented as of 2026-10-21. See [the executable harness guide](../../../harness/README.md). CLI installation/authentication and live evidence are environment checks; CI enforcement and a standalone implementation daemon remain separate work.
 
-The reviewer policy pins Claude Opus 4.6 Thinking and requires matching CLI model-selection evidence. The owner may keep commit/push manual: use an independent temporary candidate and changed-file hashes for a pre-commit review, then prepare again after the owner's commit if an exact final-HEAD verdict is required.
+The reviewer policy pins the owner-approved Claude Sonnet 4.6 Thinking default and requires matching CLI model-selection evidence. There is no automatic model fallback; historical Opus reviews retain their original attribution. The owner may keep commit/push manual: use an independent temporary candidate and changed-file hashes for a pre-commit review, then prepare again after the owner's commit if an exact final-HEAD verdict is required.
 
 Routine reviews cover the latest increment plus affected dependencies and tests. At feature completion, review the full feature-start-to-head range with integration/failure evidence. Select checks by impact and keep earlier results attributed to their actual revision; a documentation follow-up does not automatically rerun the unchanged app suite. The coordinator uses the existing base/context controls; see [scope and check selection](../../../harness/README.md#review-scope-and-check-selection).
 

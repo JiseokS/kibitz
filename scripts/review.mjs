@@ -15,11 +15,70 @@ const maxOutput = 8 * 1024 * 1024;
 const exits = { PASS: 0, CHANGES_REQUIRED: 2, INCOMPLETE: 3 };
 const gitBin = () => process.env.KIBITZ_GIT_BIN || "git";
 
+// The reviewer uses cached sign-in/config locations, not application API keys.
+const reviewerEnvKeys = new Set([
+  "PATH",
+  "HOME",
+  "USER",
+  "LOGNAME",
+  "SHELL",
+  "TMPDIR",
+  "TMP",
+  "TEMP",
+  "LANG",
+  "LC_ALL",
+  "LC_CTYPE",
+  "LC_MESSAGES",
+  "LC_COLLATE",
+  "LC_NUMERIC",
+  "LC_TIME",
+  "LC_MONETARY",
+  "TERM",
+  "COLORTERM",
+  "NO_COLOR",
+  "USERPROFILE",
+  "HOMEDRIVE",
+  "HOMEPATH",
+  "APPDATA",
+  "LOCALAPPDATA",
+  "SYSTEMROOT",
+  "SYSTEMDRIVE",
+  "WINDIR",
+  "COMSPEC",
+  "PATHEXT",
+  "XDG_CONFIG_HOME",
+  "XDG_CACHE_HOME",
+  "XDG_DATA_HOME",
+  "XDG_STATE_HOME",
+  "XDG_RUNTIME_DIR",
+  "DBUS_SESSION_BUS_ADDRESS",
+  "GOOGLE_APPLICATION_CREDENTIALS",
+  "CLOUDSDK_CONFIG",
+  "HTTP_PROXY",
+  "HTTPS_PROXY",
+  "ALL_PROXY",
+  "NO_PROXY",
+  "SSL_CERT_FILE",
+  "SSL_CERT_DIR",
+  "NODE_EXTRA_CA_CERTS",
+  "REQUESTS_CA_BUNDLE",
+  "CURL_CA_BUNDLE",
+]);
+
+export function reviewerEnvironment(source = process.env) {
+  return Object.fromEntries(
+    Object.entries(source).filter(
+      ([key, value]) =>
+        value !== undefined && reviewerEnvKeys.has(key.toUpperCase()),
+    ),
+  );
+}
+
 // No shell interpolation. Bound time, output, and the lifetime of child processes.
 export function execute(
   bin,
   args,
-  { cwd, timeoutMs = 600_000, env = process.env } = {},
+  { cwd, timeoutMs = 600_000, env = process.env, input } = {},
 ) {
   return new Promise((resolve) => {
     let stdout = "",
@@ -32,11 +91,12 @@ export function execute(
     const child = spawn(bin, args, {
       cwd,
       env: childEnv,
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: [input === undefined ? "ignore" : "pipe", "pipe", "pipe"],
       detached: process.platform !== "win32",
     });
     const stop = (reason) => {
-      problem ||= reason;
+      if (done || problem) return;
+      problem = reason;
       const signal = (sig) => {
         try {
           process.platform === "win32"
@@ -75,6 +135,11 @@ export function execute(
         stop("Output limit exceeded");
     });
     child.on("close", finish);
+    if (input !== undefined && child.stdin) {
+      child.stdin.on("error", () => stop("Input delivery failed"));
+      // end() sends EOF after the one NDJSON frame; the CLI drains that turn.
+      child.stdin.end(input);
+    }
   });
 }
 
@@ -446,7 +511,10 @@ async function tool(name, envName, fallbacks = []) {
     ? [process.env[envName]]
     : [name, ...fallbacks];
   for (const bin of candidates) {
-    const result = await execute(bin, ["--help"], { timeoutMs: 15_000 });
+    const result = await execute(bin, ["--help"], {
+      timeoutMs: 15_000,
+      env: reviewerEnvironment(),
+    });
     if (result.code === 0 && !result.error)
       return { bin, help: result.stdout + result.stderr };
   }
@@ -468,6 +536,7 @@ export async function doctor() {
   const flags = [
     "--json-schema",
     "--output-format",
+    "--input-format",
     "--sandbox",
     "--print-timeout",
     "--disable-slash-commands",
@@ -728,19 +797,27 @@ export async function runReview(
           manifest.reviewer.model,
           "--output-format",
           "stream-json",
+          "--input-format",
+          "stream-json",
           "--json-schema",
           path.join(".kibitz-review", "schema.json"),
           "--print-timeout",
           `${timeoutSeconds}s`,
-          "-p",
-          promptFor(
-            manifest,
-            await reviewBundle(path.join(dir, "checkout"), manifest),
-          ),
         ],
         {
           cwd: path.join(dir, "checkout"),
           timeoutMs: timeoutSeconds * 1000 + 5000,
+          env: reviewerEnvironment(),
+          input:
+            JSON.stringify({
+              event: "user",
+              message: {
+                content: promptFor(
+                  manifest,
+                  await reviewBundle(path.join(dir, "checkout"), manifest),
+                ),
+              },
+            }) + "\n",
         },
       );
       await fs.writeFile(

@@ -1,5 +1,18 @@
 # Changelog
 
+## Default reviewer model — 2026-10-22
+
+- Changed the default reviewer to owner-approved Claude Sonnet 4.6 Thinking (`claude-sonnet-4-6`) after the Opus security review was interrupted by the account quota.
+- Updated current instructions, the workflow diagram and reusable task criteria; retained historical Opus evidence and the incomplete run without relabeling either.
+- Kept explicit model-selection validation and disabled automatic fallback.
+
+## Review process security — 2026-10-21
+
+- Moved review context from command-line prompt arguments to one framed stdin message followed by EOF.
+- Restricted reviewer and CLI help environments to explicit runtime/configuration settings, excluding unrelated app/API/CI secrets and preload hooks.
+- Added regression coverage for private prompt delivery, environment isolation, early stdin closure, backpressure timeouts and missing executables.
+- Preserved required repository-check environments, cached reviewer sign-in and existing review integrity/model checks.
+
 ## Development review tooling — 2026-10-21
 
 - Set Codex as the implementer and Antigravity as the independent reviewer.

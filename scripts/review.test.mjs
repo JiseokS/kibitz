@@ -12,6 +12,8 @@ import {
   digestTree,
   validateReview,
   parseReviewerStream,
+  reviewerEnvironment,
+  doctor,
 } from "./review.mjs";
 
 const gitBin = process.env.KIBITZ_GIT_BIN || "git";
@@ -28,6 +30,21 @@ const git = (repo, ...args) =>
     stdio: ["ignore", "pipe", "pipe"],
   }).trim();
 const read = async (file) => JSON.parse(await fs.readFile(file, "utf8"));
+
+async function withEnvironment(values, run) {
+  const before = Object.fromEntries(
+    Object.keys(values).map((key) => [key, process.env[key]]),
+  );
+  try {
+    Object.assign(process.env, values);
+    return await run();
+  } finally {
+    for (const [key, value] of Object.entries(before)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+}
 
 async function fixture(t, { failing = false, unknownCheck = false } = {}) {
   const parent = await fs.mkdtemp(
@@ -125,6 +142,15 @@ const args = process.argv.slice(2);
 if (!args.includes('--sandbox') || !args.includes('--json-schema') || (args.includes('--dangerously-skip-permissions') || args.includes('plan'))) throw new Error('Unsafe reviewer arguments');
 const context = JSON.parse(fs.readFileSync('.kibitz-review/context.json', 'utf8'));
 if (args[args.indexOf('--model') + 1] !== context.reviewer.model || args.includes('--effort') || args[args.indexOf('--output-format') + 1] !== 'stream-json') throw new Error('Missing pinned reviewer arguments');
+if (args[args.indexOf('--input-format') + 1] !== 'stream-json' || args.some(arg => ['-p','--print','--prompt'].includes(arg) || arg.includes('SOURCE_BUNDLE_BEGIN'))) throw new Error('Prompt must use stdin');
+const lines = fs.readFileSync(0, 'utf8').trimEnd().split('\\n');
+if (lines.length !== 1) throw new Error('Expected one input frame and EOF');
+const frame = JSON.parse(lines[0]);
+if (frame.event !== 'user' || typeof frame.message?.content !== 'string') throw new Error('Invalid input frame');
+const bundle = JSON.parse(frame.message.content.split('SOURCE_BUNDLE_BEGIN\\n')[1].split('\\nSOURCE_BUNDLE_END')[0]);
+if (bundle.head !== context.head || !bundle.files.some(item => item.file === 'add.js')) throw new Error('Missing source context on stdin');
+const secretKeys = ['OPENAI_API_KEY','API_ACCESS_TOKEN','SOME_NEW_PROVIDER_SECRET'];
+fs.writeFileSync(${JSON.stringify(path.join(f.parent, "transport.json"))}, JSON.stringify({args, frames:lines.length, hasSource:true, inheritedSecrets:secretKeys.some(key => process.env[key] !== undefined)}));
 fs.appendFileSync(${JSON.stringify(path.join(f.parent, "calls.log"))}, 'called\\n');
 if (behavior.authFailure) { process.stderr.write('authentication required'); process.exit(1); }
 if (behavior.softDenied) process.stderr.write('Tool soft-denied: command requires approval');
@@ -180,6 +206,124 @@ test("PASS requires exact review evidence and a repeated run uses the cached res
     1,
   );
   assert.equal((await status(f.repo, run.run_id)).outcome, "PASS");
+});
+
+test("reviewer environment keeps runtime/config settings and drops secrets and preload hooks", () => {
+  const source = {
+    PATH: "/usr/bin",
+    HOME: "/home/reviewer",
+    LANG: "en_US.UTF-8",
+    https_proxy: "http://proxy.example:8080",
+    NODE_EXTRA_CA_CERTS: "/certs/internal.pem",
+    GOOGLE_APPLICATION_CREDENTIALS: "/config/adc.json",
+    XDG_CONFIG_HOME: "/config",
+    OPENAI_API_KEY: "dummy-app-key",
+    API_ACCESS_TOKEN: "dummy-token",
+    GH_TOKEN: "dummy-github-token",
+    AWS_SECRET_ACCESS_KEY: "dummy-aws-key",
+    ANTHROPIC_API_KEY: "dummy-provider-key",
+    SOME_NEW_PROVIDER_SECRET: "dummy-unknown-key",
+    NODE_OPTIONS: "--require /not-to-be-loaded.cjs",
+    BASH_ENV: "/not-to-be-sourced",
+    KIBITZ_AGY_BIN: "/trusted/agy",
+    NODE_TEST_CONTEXT: "child-v8",
+  };
+  assert.deepEqual(reviewerEnvironment(source), {
+    PATH: source.PATH,
+    HOME: source.HOME,
+    LANG: source.LANG,
+    https_proxy: source.https_proxy,
+    NODE_EXTRA_CA_CERTS: source.NODE_EXTRA_CA_CERTS,
+    GOOGLE_APPLICATION_CREDENTIALS: source.GOOGLE_APPLICATION_CREDENTIALS,
+    XDG_CONFIG_HOME: source.XDG_CONFIG_HOME,
+  });
+  assert.equal(source.OPENAI_API_KEY, "dummy-app-key");
+});
+
+test("reviewer receives complete source through stdin without parent app secrets", async (t) => {
+  const f = await fixture(t),
+    run = await makeRun(f),
+    bin = await fakeReviewer(f);
+  await withEnvironment(
+    {
+      OPENAI_API_KEY: "dummy-app-secret",
+      API_ACCESS_TOKEN: "dummy-beta-secret",
+      SOME_NEW_PROVIDER_SECRET: "dummy-unknown-secret",
+    },
+    async () => {
+      const result = await runReview(f.repo, run.run_id, { bin });
+      assert.equal(result.outcome, "PASS");
+      const transport = await read(path.join(f.parent, "transport.json"));
+      assert.equal(transport.frames, 1);
+      assert.equal(transport.hasSource, true);
+      assert.equal(transport.inheritedSecrets, false);
+      assert.ok(
+        transport.args.every(
+          (arg) =>
+            !arg.includes("dummy-") && !arg.includes("SOURCE_BUNDLE_BEGIN"),
+        ),
+      );
+      assert.equal(process.env.OPENAI_API_KEY, "dummy-app-secret");
+    },
+  );
+});
+
+test("diagnostic help probes also strip application secrets", async (t) => {
+  const f = await fixture(t),
+    bin = path.join(f.parent, "safe-help");
+  await fs.writeFile(
+    bin,
+    `#!/usr/bin/env node\nif (process.env.SOME_NEW_PROVIDER_SECRET) process.exit(1);\nconsole.log('--json-schema --output-format --input-format --sandbox --print-timeout --disable-slash-commands --model');\n`,
+    { mode: 0o700 },
+  );
+  await withEnvironment(
+    {
+      KIBITZ_AGY_BIN: bin,
+      KIBITZ_CODEX_BIN: bin,
+      SOME_NEW_PROVIDER_SECRET: "dummy-diagnostic-secret",
+    },
+    async () => {
+      const diagnostics = await doctor();
+      assert.equal(diagnostics.antigravity.ready, true);
+      assert.equal(diagnostics.codex.ready, true);
+    },
+  );
+});
+
+test("stdin preserves a framed prompt with quotes, newlines, Unicode and shell syntax", async () => {
+  const prompt = 'Private context: "quoted"\n한국어; $(no-shell) `literal`';
+  const input =
+    JSON.stringify({ event: "user", message: { content: prompt } }) + "\n";
+  const response = await execute(
+    process.execPath,
+    [
+      "-e",
+      "let input='';process.stdin.setEncoding('utf8');process.stdin.on('data',chunk=>input+=chunk);process.stdin.on('end',()=>process.stdout.write(JSON.stringify({input,args:process.argv.slice(1)})));",
+    ],
+    { input },
+  );
+  assert.equal(response.code, 0);
+  assert.equal(response.error, null);
+  assert.equal(JSON.parse(response.stdout).input, input);
+  assert.deepEqual(JSON.parse(response.stdout).args, []);
+});
+
+test("early stdin closure becomes an execution failure instead of an uncaught EPIPE", async () => {
+  const response = await execute(
+    process.execPath,
+    ["-e", "require('node:fs').closeSync(0);setInterval(()=>{},1000);"],
+    { input: "x".repeat(2_000_000), timeoutMs: 2000 },
+  );
+  assert.match(response.error, /Input delivery failed/);
+  assert.notEqual(response.code, 0);
+});
+
+test("a missing executable with piped input returns an execution failure", async () => {
+  const response = await execute("/missing/kibitz-reviewer", [], {
+    input: "one frame\n",
+  });
+  assert.notEqual(response.code, 0);
+  assert.ok(response.error);
 });
 
 for (const [name, behavior] of Object.entries({
@@ -391,7 +535,7 @@ test("execution timeouts terminate a process and return an incomplete reason", a
   const result = await execute(
     process.execPath,
     ["-e", "setInterval(() => {}, 1000)"],
-    { timeoutMs: 50 },
+    { timeoutMs: 50, input: "x".repeat(2_000_000) },
   );
   assert.match(result.error, /timed out/);
   assert.notEqual(result.code, 0);

@@ -96,7 +96,7 @@ See [architecture and API contracts](kibitz/docs/ARCHITECTURE.md) for limits, er
 
 Codex implements and tests each scoped task; Antigravity reviews the fixed commit range through the local CLI runner. The current Codex chat invokes the runner and reads its result, so manual copying between the two apps is unnecessary once CLI authentication is ready.
 
-The committed reviewer policy selects **Claude Opus 4.6 (Thinking)**. Reviews record the requested model and the CLI-reported model; missing or mismatched selection is incomplete. Earlier reviews without model provenance do not establish which model ran. The owner may retain manual commit/push control; pre-commit reviews use an independent temporary candidate with file hashes.
+The committed reviewer policy selects **Claude Sonnet 4.6 (Thinking)** (`claude-sonnet-4-6`), explicitly chosen by the owner on October 22, 2026. Reviews record the requested model and the CLI-reported model; missing or mismatched selection is incomplete. Historical Opus reviews keep their original model attribution, and earlier reviews without model provenance do not establish which model ran. The owner may retain manual commit/push control; pre-commit reviews use an independent temporary candidate with file hashes.
 
 Routine reviews cover the latest changed code and its affected dependencies/tests. At feature completion, review the full range from the recorded feature start through the latest head, including integration and failure paths. The coordinator selects the range and context explicitly; see [review scope and check selection](harness/README.md#review-scope-and-check-selection).
 

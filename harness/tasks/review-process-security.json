@@ -1,0 +1,24 @@
+{
+  "id": "review-process-security",
+  "goal": "Review the focused follow-up to pushed commit 3b53a0f: stdin-only private review context, a minimal reviewer environment, and the owner's explicit Sonnet default selection, preserving execution/integrity behavior and accurate historical evidence.",
+  "acceptance": [
+    {
+      "id": "SEC01",
+      "description": "Complete review context is delivered as exactly one valid stdin user frame followed by EOF, with no prompt/source content in command arguments. Delivery errors, early input closure, timeout and process failure cannot produce PASS or hang the runner."
+    },
+    {
+      "id": "SEC02",
+      "description": "Reviewer runs and CLI help probes use an explicit environment allowlist that drops application/provider/CI secrets and preload hooks while preserving needed runtime, cached sign-in/configuration, proxy/CA and supported credential-file settings. Parent environment and repository-check behavior remain unchanged."
+    },
+    {
+      "id": "SEC03",
+      "description": "Existing model pin, denied-action detection, bounded execution, source/snapshot integrity and cached-result validation remain intact. Regression tests and documentation accurately describe the hardening, authentication assumptions, execution boundaries and verification scope; no application or dependency changes are introduced."
+    },
+    {
+      "id": "SEC04",
+      "description": "The owner-approved default is claude-sonnet-4-6 (Sonnet 4.6 Thinking), configuration and current guidance agree, and actual CLI-reported selection must match. Historical Opus results and the quota-interrupted INCOMPLETE run keep their original attribution; no automatic model fallback is introduced."
+    }
+  ],
+  "checks": ["harness", "typecheck", "lint"],
+  "context_files": ["harness/reviewer.json", "harness/review.schema.json"]
+}
