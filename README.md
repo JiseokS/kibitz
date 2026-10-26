@@ -5,11 +5,11 @@
 Kibitz is an English-first iOS and Android app for reflecting on something you did or said. Write about a moment, compare four philosophical interpretations, and decide which perspective stays with you.
 
 <!-- kibitz-design-review:start -->
-## Personal MVP design review — October 20, 2026
+## Personal MVP plan — revised October 22, 2026
 
-The next design uses scoreless, written feedback: choose a philosopher for each entry, read that take first, then switch to other perspectives prepared while reading. A collapsed comparison and practical next step sit below. Open-ended conversations and reasoning affinity are later work.
+The accepted next design uses scoreless written feedback: choose a philosopher per entry, read that card first, switch lenses below, then expand a collapsed comparison and practical next step. First run a bounded real-output quality/timing spike on the existing app (T00.5), before implementing the revised contracts/UI. The first revised slice retains one complete call for all four perspectives; progressive generation (D08) is an evidence-gated later optimization. Open-ended conversations and reasoning affinity remain later work.
 
-The feature tables below describe the implemented prototype. The review documents distinguish confirmed product choices, technical proposals and future work; the revised flow is not implemented yet.
+The feature tables below describe the implemented scored prototype; the revised flow is not implemented yet. T01 promotes scoreless output rules with the source change, and T03 preserves legacy records before new-format writes. Explicit resonance and existing votes remain preserved independently of the open map-tab visibility choice. A paid quality experiment requires a locally configured server-only key and an explicit owner-set budget; this plan update does not run or authorize one.
 
 - [Design review](kibitz/docs/planning/DESIGN_REVIEW.md): product, interaction, contracts, failure behavior and acceptance criteria.
 - [Decision workbook](kibitz/docs/planning/DECISIONS_WORKBOOK.md): nine confirmed choices and editable remaining decisions.
@@ -96,7 +96,7 @@ See [architecture and API contracts](kibitz/docs/ARCHITECTURE.md) for limits, er
 
 Codex implements and tests each scoped task; Antigravity reviews the fixed commit range through the local CLI runner. The current Codex chat invokes the runner and reads its result, so manual copying between the two apps is unnecessary once CLI authentication is ready.
 
-The owner requested conservative model selection on October 22, 2026: **Claude Opus 4.6 (Thinking)** is the default for medium/high complexity, uncertainty, code/configuration changes and feature integration. **Claude Sonnet 4.6 (Thinking)** is eligible only for explicitly assessed, small documentation-only routine changes. Codex records its complexity, scope and reason in the task; the harness can raise the choice using diff/context guards, freezes the decision, and validates the CLI-reported model. Quota or execution failures never cause an automatic downgrade. See [model selection and limits](harness/README.md#reviewer-model-policy). Historical fixed Sonnet/Opus reviews retain their actual attribution. Pre-commit reviews can still use independent temporary candidates and file hashes when the owner wants to commit manually.
+Preferred routing is Opus for substantive/uncertain reviews and Sonnet only for qualifying small documentation changes. On October 26, 2026 the owner authorized Gemini after explicit Opus quota exhaustion; the active default is now `gemini-3.8-flash-high` while quota-blocked. Codex records the failed run/reason and prepares a new frozen policy/run; the runner validates the actual model and does not automatically fail over. Other execution failures do not authorize switching. See [selection and recovery rules](harness/README.md#reviewer-model-policy). Historical results keep their original attribution; pre-commit candidates and hashes still support manual commit/push.
 
 Routine reviews cover the latest changed code and its affected dependencies/tests. At feature completion, review the full range from the recorded feature start through the latest head, including integration and failure paths. The coordinator selects the range and context explicitly; see [review scope and check selection](harness/README.md#review-scope-and-check-selection).
 

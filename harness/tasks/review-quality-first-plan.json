@@ -1,0 +1,47 @@
+{
+  "id": "review-quality-first-plan",
+  "goal": "Review the pending quality-first product documentation correction on top of the separately reviewed Gemini model-ID/policy compatibility head e2ab8208fee9a7ab4f4e56b2a86b7bc8310d1b5c. This range leaves runner code and active model policy unchanged and preserves the failed Opus INCOMPLETE evidence.",
+  "review": {
+    "complexity": "medium",
+    "scope": "routine",
+    "reason": "Product sequencing, binding transition rules and failure acceptance span multiple documents. Use the normal substantive-review route with the owner-authorized Gemini High exception during the explicit Opus quota block."
+  },
+  "acceptance": [
+    {
+      "id": "PLAN01",
+      "description": "A bounded real-output quality/latency spike precedes implementation of the revised contracts and UI, using the existing app with explicit key/budget prerequisites. Later target-quality checks remain distinct; no paid app calls, measured gains or native success are falsely claimed."
+    },
+    {
+      "id": "PLAN02",
+      "description": "The first target slice retains one call for four scoreless perspectives plus synthesis, with the chosen lens shown first. D08 intent is preserved as a gated later optimization; phase/cache/coordinator/partial-storage work is not a prerequisite for the initial UI. Necessary scoreless/selection storage compatibility work is retained."
+    },
+    {
+      "id": "PLAN03",
+      "description": "AGENTS, product rules, roadmap, decisions, design, workbook and delivery plan distinguish implemented scored baseline, accepted scoreless target and deferred progressive proposals. Rule promotion has a concrete task boundary, historical records remain intact and unresolved device/input/map choices are not silently approved."
+    },
+    {
+      "id": "PLAN04",
+      "description": "The target preserves explicit resonance votes and their invariants independently of map-tab visibility. Acceptance criteria cover persistence, edit/clear/delete, exclusions and no implicit voting from browsing or initial selection. Existing map semantics are not confused with later reasoning affinity."
+    },
+    {
+      "id": "PLAN05",
+      "description": "Validated results can be displayed unsaved before persistence succeeds; failed saves retain usable session results and save-only retry without claiming process durability. Any future progressive phase pauses extra paid work on save failure. New submissions, stale responses and deletion have explicit consistent policies and mapped acceptance IDs."
+    },
+    {
+      "id": "PLAN06",
+      "description": "Acceptance-to-task mappings, dependencies, links, status and draft priority agree. This documentation range leaves application/provider/storage/dependencies, runner implementation and active reviewer configuration unchanged from the separately reviewed compatibility baseline; the aggregate owner diff is not mislabeled as documentation-only."
+    },
+    {
+      "id": "PLAN07",
+      "description": "Gemini recovery follows the owner's explicit Opus-quota exception, preserves the failed Opus INCOMPLETE run/head, freezes the active gemini-3.8-flash-high policy and validates matching CLI model evidence. Preferred normal routing remains Opus/Sonnet. No runner automatic failover, generic-error switch or predeclared Gemini PASS is claimed."
+    }
+  ],
+  "checks": [
+    "typecheck",
+    "lint"
+  ],
+  "context_files": [
+    "harness/reviewer.json",
+    "kibitz/docs/planning/DELIVERY_PLAN.md"
+  ]
+}

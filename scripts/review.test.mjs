@@ -719,6 +719,79 @@ test("saved model provenance and review content must match raw CLI evidence", as
   }
 });
 
+test("dotted default model IDs survive preparation, review and saved provenance", async (t) => {
+  const f = await fixture(t);
+  await fs.writeFile(
+    path.join(f.repo, "harness/reviewer.json"),
+    JSON.stringify({ ...routedPolicy, model: "gemini-3.8-flash-high" }),
+  );
+  git(f.repo, "add", ".");
+  git(f.repo, "commit", "--quiet", "-m", "Configure dotted model");
+  const run = await makeRun(f);
+  assert.equal(run.reviewer.model, "gemini-3.8-flash-high");
+  const result = await runReview(f.repo, run.run_id, {
+    bin: await fakeReviewer(f),
+  });
+  assert.equal(result.outcome, "PASS");
+  assert.equal(result.provenance.requested_model, "gemini-3.8-flash-high");
+  assert.equal(result.provenance.reported_model, "gemini-3.8-flash-high");
+  assert.equal((await status(f.repo, run.run_id)).outcome, "PASS");
+});
+
+test("dotted simple model IDs remain eligible only within the configured routine scope", () => {
+  const policy = {
+    ...routedPolicy,
+    routing: { simple_model: "gemini-3.8-flash-high" },
+  };
+  const changes = { files: ["README.md"], changed_lines: 1, unusual: false };
+  assert.equal(
+    selectReviewer(
+      policy,
+      { review: lowAssessment },
+      "harness/tasks/task.json",
+      changes,
+    ).reviewer.model,
+    "gemini-3.8-flash-high",
+  );
+  assert.equal(
+    selectReviewer(policy, {}, "harness/tasks/task.json", changes).reviewer
+      .model,
+    routedPolicy.model,
+  );
+});
+
+test("model IDs still reject flags, whitespace, paths and excessive length", () => {
+  const changes = { files: ["README.md"], changed_lines: 1, unusual: false };
+  for (const model of [
+    "--model",
+    "gemini-3.8 --mode=auto",
+    "gemini\n3.8",
+    "gemini-3.8\n",
+    "gemini-3.8\r",
+    "gemini-3.8\u2028",
+    "gemini-3.8\u2029",
+    "../gemini",
+    "vendor/gemini",
+    "a".repeat(101),
+  ]) {
+    for (const policy of [
+      { ...routedPolicy, model },
+      { ...routedPolicy, routing: { simple_model: model } },
+    ]) {
+      assert.throws(
+        () =>
+          selectReviewer(
+            policy,
+            { review: lowAssessment },
+            "harness/tasks/task.json",
+            changes,
+          ),
+        /invalid string format/,
+      );
+    }
+  }
+});
+
 test("reviewer policy rejects unsupported settings in the frozen head", async (t) => {
   const f = await fixture(t);
   await fs.writeFile(

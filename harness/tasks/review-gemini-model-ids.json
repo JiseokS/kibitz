@@ -1,0 +1,29 @@
+{
+  "id": "review-gemini-model-ids",
+  "goal": "Enable the catalogued dotted Gemini model ID and the owner-authorized Opus individual-quota recovery. This scoped compatibility review precedes the separate pending quality-first product documentation review.",
+  "review": {
+    "complexity": "high",
+    "scope": "routine",
+    "reason": "Reviewer input validation and the active model policy affect trusted review evidence. The normal strong route applies, using the explicit owner-authorized Gemini High quota exception rather than Sonnet."
+  },
+  "acceptance": [
+    {
+      "id": "GEM01",
+      "description": "Default, simple and frozen-selected model validators accept the real dotted Gemini ID while still rejecting flags, whitespace, paths and excessive length; meaningful selection and full mocked run/status/provenance regressions pass."
+    },
+    {
+      "id": "GEM02",
+      "description": "Active policy requests gemini-3.8-flash-high under the explicit owner-authorized Opus individual-quota exception. Preserve preferred normal Opus/Sonnet policy and failed Opus run/head; exclude other error categories, stop on Gemini failure and restore Opus only through a fresh candidate once recovery is established."
+    },
+    {
+      "id": "GEM03",
+      "description": "No automatic failover, manifest mutation, silent attribution change, permission bypass or new retries are introduced. Existing frozen selection, model matching, integrity, stdin privacy, minimal environment and review checks remain intact."
+    },
+    {
+      "id": "GEM04",
+      "description": "Every changed file is reviewed. Docs distinguish mock checks, actual model provenance, historical INCOMPLETE evidence and the still-pending product plan. No app/runtime/dependency change, paid app evaluation or native verification is claimed."
+    }
+  ],
+  "checks": ["harness", "typecheck", "lint"],
+  "context_files": ["harness/review.schema.json"]
+}

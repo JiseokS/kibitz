@@ -1,6 +1,16 @@
 # Kibitz product specification
 
-Status: current MVP behavior and binding product decisions. Updated 2026-10-19.
+Status: implemented MVP baseline below, with the accepted transition explicitly separated. Updated 2026-10-22.
+
+## Accepted next slice and rule promotion
+
+The accepted target is scoreless critique, a philosopher chosen per entry and alternatives selected below. T00.5 tests existing output before revised implementation. Keep one complete call for all four lenses plus synthesis first; D08 phases require T08 measurement and owner go.
+
+T01 promotes scoreless rules with schemas, provider/client and fixtures together. Each new lens has verdict, reasoning, question and action. T03 establishes versioned complete-entry compatibility and original first choice before writes; preserve old payloads/votes. Partial storage and phase infrastructure are gated G work.
+
+The sections below describe current implementation until source changes land; their scored rules do not override the accepted T01 target. Roadmap and validation distinguish intent, implementation and evidence.
+
+Target results are readable while saving/unsaved; only a successful write makes a saved entry. Save retry calls no AI; memory may be lost on termination. Preserve explicit resonance and guard new drafts/results/deletion against old work. [AC01–AC19](planning/DESIGN_REVIEW.md#11-screen-and-failure-acceptance-criteria) and the [task mapping](planning/DELIVERY_PLAN.md#5-requirement-to-verification-map) are planned checks, not runtime claims.
 
 ## Identity and audience
 
@@ -20,7 +30,7 @@ Status: current MVP behavior and binding product decisions. Updated 2026-10-19.
 5. **Journal:** return to saved entries, search, filter, reopen or delete.
 6. **My philosophy:** view the distribution of selected perspectives once five eligible entries have choices.
 
-The home screen opens on writing, not a philosopher chat. Continuing chat, councils that debate each other, and philosopher selection are deferred.
+The home screen opens on writing, not a philosopher chat. Continuing chat and councils that debate each other remain deferred. Per-entry first-philosopher selection is an accepted next-slice feature, not implemented in this baseline.
 
 ## Input and categories
 
@@ -51,6 +61,8 @@ Each result includes all four IDs exactly once. Each judgment has a short verdic
 
 ## Scores
 
+**Implemented scored baseline and legacy records only.** This section is superseded for newly generated output at T01 by the accepted scoreless contract above. Preserve historical data; target presentation hides its numbers. Until the actual transition, current provider/schema checks remain the scored baseline.
+
 - Scores are integers from 0 to 10, or `null`.
 - A score represents how the described action fits that particular framework. It is never a rating of the person.
 - Insufficient context, an input that is not an account of an action/speech, and inappropriate-to-score situations use null scores for all four.
@@ -75,12 +87,14 @@ Each result includes all four IDs exactly once. Each judgment has a short verdic
 - A tie gets a neutral multiple-perspectives description. Do not arbitrarily declare a single dominant philosophy.
 - Explain that this is a snapshot of expressed preferences, not a validated psychological test, moral standing or immutable identity.
 - Time trends, learned trait inference and personality claims are future research, not present features.
+- In the next slice preserve the explicit select/change/clear control and stored votes even while map-tab visibility (D10) is unresolved. First-philosopher choice and browsing are never votes. Hiding the tab alone does not approve removing capture or freezing new choices; AC16 covers preservation and map updates.
 
 ## Journal and deletion
 
 - Save on this device after a validated evaluation. No account or cloud sync.
 - Storage is not additionally encrypted by the app. Do not imply a secure vault or guaranteed backups.
 - Only show a saved record after the storage write succeeds. Failed saves can retry the already-generated result without another paid evaluation.
+- This saved-record rule remains binding in the target. Planned transient result presentation may show a clearly unsaved evaluation before persistence; it must not publish a committed journal record prematurely or promise recovery after process termination.
 - Confirm individual and full deletion. Full deletion resets the derived map.
 - Corrupt or unsupported records must block writes instead of being discarded.
 - A language/brand migration must preserve original text, evaluations, timestamps, IDs and choices. Old content is not retroactively translated or transmitted to AI.

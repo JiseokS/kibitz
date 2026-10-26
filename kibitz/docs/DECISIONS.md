@@ -1,6 +1,6 @@
 # Kibitz decision log
 
-Accepted decisions, 2026-10-19. Change these deliberately and update the product rules, implementation and roadmap together.
+Accepted decisions and dated transitions, updated 2026-10-22. Keep baseline implementation, accepted target and verified evidence distinct; update rules, code status and roadmap together.
 
 ## D001 — Kibitz, English-first, mobile-first
 
@@ -17,6 +17,8 @@ Tradeoff: real public authentication, durable budgets and deployment operations 
 ## D003 — One evaluation, four frameworks
 
 One structured request returns all four judgments and a synthesis. Use Kant, Mill, Aristotle and Nietzsche. Modern framework interpretations, uncertainty and real contrasts matter more than theatrical impersonation.
+
+This remains the implemented architecture and the first revised slice. The scoreless format transition is D008; D08 progressive generation from the design workbook is gated by D009 below, not silently adopted as a prerequisite.
 
 Tradeoff: this is not four independently verified agents debating. Do not claim independence, historical authenticity or calibrated scores. Live quality evaluation is required before beta.
 
@@ -43,3 +45,27 @@ Tradeoff: there is no app-level encryption/sync/recovery. App identifier changes
 The workspace `AGENTS.md` defines durable Codex/product/workflow rules; `kibitz/AGENTS.md` adds implementation conventions. README is the human entry point; product, architecture, roadmap and validation documents hold their own facts. Avoid an unrecognized or conflicting `codexrule` file.
 
 Update status when evidence changes. Implemented, mocked, exported, installed, live-tested and released are different states.
+
+## D008 — Accepted scoreless chosen-first target, 2026-10-22 sequencing
+
+Keep D03/D06/D07: scoreless critique, per-entry first choice, alternatives below. First use one complete call with per-lens actions; store original choice separately from viewing/resonance.
+
+T01 promotes new-format rules with provider/client/schema/tests; T03 establishes versioned compatibility before writes. Preserve old payloads, IDs, timestamps and votes without inventing missing original choice/actions. This documentation change implements none of that runtime work.
+
+## D009 — Quality before architecture; progressive generation gated
+
+T00.5 precedes revised implementation: existing AI path, roughly ten fictional cases, configured server-only key, explicit owner budget and go/revise/stop report. Repeat relevant cases after prompt changes.
+
+Retain D08 intent, but defer phases/cache/partial storage/coordinator until waiting evidence motivates T08 and matched quality/timing/usage evidence supports owner go. An inconclusive result retains one call.
+
+## D010 — Preserve explicit resonance independently of map visibility
+
+D10 remains open; preserve the current tab, vote control and data. Hiding the tab alone cannot remove voting. First choice/browsing never vote. AC16 preserves select/change/clear, persistence, eligibility, five-choice threshold and edit/delete updates. Removing capture requires a separate decision. Inferred affinity stays later.
+
+## D011 — Target display, persistence and stale-work boundaries
+
+Show validated transient output while saving/unsaved; a successful write alone commits a journal record. Save retry calls no AI; memory is not process-durable. Keep the matching draft until save or deliberate discard.
+
+Block duplicate submit; deliberate replacement cancels/supersedes old work under a new identity after explicit save/discard of usable unsaved output. Late work cannot replace new drafts/results or resurrect deleted records (AC17).
+
+For later D08, show primary before saving, but start the extra paid call only after save succeeds; failure visibly pauses it. This is deferred policy, not existing behavior.

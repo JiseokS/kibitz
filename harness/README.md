@@ -81,11 +81,11 @@ node --test scripts/review.test.mjs
 
 ### Reviewer model policy
 
-The owner requested complexity-aware selection on 2026-10-22, biased toward the stronger reviewer. The committed policy is:
+Normal preference remains Opus for substantive reviews and Sonnet only for qualifying small documentation changes. On 2026-10-26 the owner authorized Gemini after an explicit Opus quota error. The active policy below uses Gemini 3.8 Flash (High), confirmed in the account catalog that day. Opus references below describe the preferred normal routing; while quota-blocked the configured default is Gemini. The `strong` tier is a routing role, not evidence of equivalent review quality.
 
 ```json
 {
-  "model": "claude-opus-4-6-thinking",
+  "model": "gemini-3.8-flash-high",
   "routing": { "simple_model": "claude-sonnet-4-6" }
 }
 ```
@@ -110,11 +110,13 @@ This field belongs inside the task object, alongside `goal`, `acceptance` and `c
 
 The runner's first version deliberately permits Sonnet only when all changed files and explicit `context_files` are `README.md`, Markdown below `kibitz/docs/` excluding `AGENTS.md`, or the current task brief under `harness/tasks/`. There must be at most five distinct affected files and at most 200 added/deleted lines, including the task brief. Binary content, symlinks, executable/file-mode changes and deletions raise the choice. Renames are evaluated as deletion/addition so both paths are considered. Runtime, config, rules, harness and other files raise it to Opus even if Codex mistakenly labels the task low. The unchanged harness regression suite automatically attached as check evidence is not itself a changed or explicitly requested dependency; it does not make a documentation-only change a runtime change. All changed files are still supplied for review.
 
-These guards can raise risk; they do not understand the meaning of prose or prove the assessment correct. Codex must use medium/high for substantive security, architecture, product-contract or policy changes even if they happen to be written in Markdown. Ambiguity goes to Opus. Sonnet eligibility can be expanded later only through an explicit reviewed policy change, not a quota-driven workaround.
+These guards can raise risk; they do not understand the meaning of prose or prove the assessment correct. Codex must use medium/high for substantive security, architecture, product-contract or policy changes even if they happen to be written in Markdown. Ambiguity goes to Opus. Sonnet eligibility can be expanded later only through an explicit reviewed policy change. The separately authorized Gemini quota exception changes the active default, not Sonnet eligibility.
+
+Model IDs may contain lowercase letters, digits, hyphens and dots, must start with a letter or digit and are limited to 100 characters. Flags, whitespace and paths are rejected; the selected token is still passed as a separate argument with no shell.
 
 `prepare` reads the policy and task from the exact reviewed HEAD, derives the complete diff, and returns the selected model, assessment and reasons before any model request. It freezes them in the version 3 manifest and review context; `run` and `status` rederive the decision from the frozen policy/task/diff and reject altered selection evidence. Reports/results keep the reasons as well as the requested/reported model. Old single-model policies and valid version 2 evidence remain supported without relabeling their model or outcome.
 
-`run` explicitly passes the frozen `--model`; no separate effort override or second classification model is used. Confirm availability with `agy models` when setting up or changing policy. A missing model, unsupported flag, authentication failure or exhausted allowance stays INCOMPLETE. Never silently retry with a cheaper model or turn an error into PASS. A model/policy change needs a new committed candidate and prepared run. Earlier fixed Sonnet/Opus reviews keep their original attribution; there is no quota fallback chain.
+`run` passes the frozen `--model`; no separate effort override or classification model is used. Confirm availability with `agy models`. The coordinator may use the owner-approved Gemini exception only with preserved explicit Opus individual-quota evidence: record the failed run/head and reason, change the active committed policy, then prepare a new candidate/run. Never edit a frozen manifest or relabel the Opus attempt. This is Codex's recovery procedure, not automatic fallback inside the runner. Authentication, missing-model, timeout, denied-tool and generic rate errors remain INCOMPLETE without switching. Stop if Gemini also fails. Once recovery is established, restore preferred Opus through a fresh candidate. Historical outcomes/model attribution stay intact; no failure becomes PASS merely because another model ran.
 
 The runner uses `stream-json`, validates the `init.model` selection and final structured result, and records `requested_model` and `reported_model` in `result.json`. Raw events remain in `attempt-NN/stdout.jsonl`. A missing/mismatched model cannot PASS. The CLI does not attest server-side execution. Saved status revalidates the verdict and model provenance against the raw stream. Older reviews without this provenance cannot serve as pinned-model reviews.
 

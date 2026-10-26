@@ -1,8 +1,10 @@
 # Kibitz decision workbook
 
-Updated 2026-10-20. Companion: [design review](DESIGN_REVIEW.md) · [delivery plan](DELIVERY_PLAN.md).
+Updated 2026-10-22. Companion: [design review](DESIGN_REVIEW.md) · [delivery plan](DELIVERY_PLAN.md).
 
 **How to edit:** keep confirmed choices, change the selection if you disagree, and write short founder notes. You can answer in Korean; authored product/developer documentation and app output remain English. The first nine decisions reflect direct answers in chat, not inferred approval.
+
+**Accepted revision, 2026-10-22:** T00.5 tests existing output first; D03/D06/D07 use one complete call next; D08 remains gated on T08 evidence. D10–D12 and paid-call budgets remain unresolved; technical proposals are not blanket approved.
 
 ## Confirmed decisions
 
@@ -15,10 +17,10 @@ Updated 2026-10-20. Companion: [design review](DESIGN_REVIEW.md) · [delivery pl
 | D05 | Record storage | Automatically save on this device; allow deletion | Ask to save each result; ephemeral-only sessions |
 | D06 | Result layout | Chosen philosopher first, alternatives selected below | Four detailed cards presented all at once |
 | D07 | Primary selection | Choose a philosopher for each entry | Global default or an onboarding-only choice |
-| D08 | Generation order | First chosen philosopher, then prepare others while reading | One blocking all-four request; generate only after each tab tap |
+| D08 | Intended later generation order | Retained: first chosen philosopher, then others while reading; gated on T08 | First implementation uses one complete call to validate D06/D07 before phase infrastructure |
 | D09 | Secondary summary | Collapsed comparison and combined action below | Later: reasoning-affinity explanation alongside it |
 
-D08 is a chosen strategy and a performance hypothesis to measure. It does not guarantee lower total latency or provider cost.
+D08 remains a chosen direction and an unmeasured performance/quality hypothesis. Its first implementation was deferred by the owner's sequencing correction. It does not guarantee lower first-visible/total latency, better contrast or lower cost; an inconclusive experiment keeps the complete one-call slice.
 
 ### D01 — voice examples to approve
 
@@ -45,9 +47,9 @@ Founder notes:
 
 1. Write an episode and choose who weighs in first.
 2. Read that one philosopher's take and next action.
-3. Other philosophers prepare asynchronously while the app is active.
-4. Tap another name below to see another lens; loading is explicit if it is not ready.
-5. Expand the comparison below when all required perspectives are ready.
+3. First slice: one response provides all four lenses; only the selected card is initially expanded. All alternatives are already ready.
+4. Tap another name below with no model call. Later D08 may introduce honest per-lens loading after its gate.
+5. Expand the ready comparison; optionally record an explicit resonance choice independently of first choice and browsing.
 6. Later, show explainable reasoning affinity; do not fabricate it in the MVP.
 
 Founder notes / sketch changes:
@@ -66,6 +68,8 @@ These are proposals, not automatically approved behavior. Only resolve those tha
 
 **Proposal: A**, with the inference feature in the later roadmap. **Selected:** OPEN.
 
+Until decided, keep the current tab, vote control and data. Hiding the tab alone cannot remove voting. AC16 preserves capture, eligibility, five-choice unlocking and edit/delete updates; removal needs a separate explicit decision.
+
 Founder notes:
 
 ### D11 — primary device for the first acceptance pass
@@ -77,6 +81,8 @@ Founder notes:
 | C. Both together | Parallel acceptance on two platforms | More setup before learning whether the experience helps |
 
 **Proposal:** use the phone you actually use; do not assume which one that is. iOS and Android remain the product targets. **Selected:** OPEN.
+
+Resolve before T09 physical-device acceptance, not before the existing client/server T00.5 spike. Installed simulator runtimes do not establish installed-phone behavior.
 
 Founder device / OS / notes:
 
@@ -90,21 +96,26 @@ Founder device / OS / notes:
 
 **Proposal: A for the first slice**, evaluate whether B helps after personal use. Never infer unprovided motives as facts. **Selected:** OPEN.
 
+The existing one-field input can be used for T00.5 without closing this choice. Resolve the target before the revised form is implemented; do not silently add required reasoning fields.
+
 Founder notes:
 
 ## Implementation proposals that are not product approvals
 
 | Topic | Proposed starting point | Review before implementation |
 | --- | --- | --- |
-| Background meaning | Asynchronous work while the app is active; deliberate resume after interruption | Phone lifecycle and cost behavior |
-| Remaining viewpoints | One batch for the other three plus synthesis | Exact output lengths and failure handling |
+| First-slice generation | One complete scoreless response, chosen card displayed first | Baseline T00.5 evidence, target contracts and fresh output review after changes |
+| Later background meaning (D08) | Asynchronous work while active; deliberate resume | T08 go, phone lifecycle, quality/cost tradeoffs |
+| Later remaining viewpoints (D08) | One batch for the other three plus synthesis | Exact output lengths, primary-context anchoring and failure behavior |
 | Primary next step | Each lens gets its own concrete action | Avoid four cosmetically different versions of identical advice |
-| New API contract | Phase-specific scoreless responses | Breaking-change handling if distributed clients exist |
-| Journal evolution | Versioned partial-results schema with legacy reader | Lossless content/selection migration and deletion races |
-| Idempotency | Operation IDs plus bounded process-local deduplication/cache | Restart/expiry limits and ambiguous paid retries |
+| New API contract | One complete four-perspective scoreless response first; phase subsets later | Coordinated schema/prompt/client change at T01; distributed-client compatibility |
+| Journal evolution | Complete scoreless/first-choice compatibility now; partial format only after T08 | Preserve content, scores as legacy data and explicit votes; do not invent missing metadata |
+| Later idempotency (D08) | Operation IDs plus bounded process-local deduplication/cache | T08 go, actual TTL/budgets, restart/expiry and ambiguous paid retries |
 | Private personal API | Keep server-only credentials and controlled access | Choose an actual reachable development/server setup later |
-| Usage budget | Owner-set provider-call/token budget, with phase accounting | Amount and measurement; no made-up cost guarantee |
+| Usage budget | Explicit owner-set request/token/cost bound before T00.5 or any later experiment | Missing cost evidence remains unknown; later phase accounting decided before G implementation |
 | Draft recovery | Local text/category/primary-choice persistence | Clear-on-save, failure and process-restart semantics |
+
+Target results remain readable while saving/unsaved; save retry calls no AI and memory is not process-durable. Later D08 shows primary before save, then starts the extra paid batch only after save succeeds; failure visibly pauses it. These are planned policies.
 
 ## Review sign-off
 
@@ -122,3 +133,5 @@ Founder notes:
 **Review date:**
 
 Leaving these fields blank means the complete technical proposal is still under review. It does not undo the nine choices already confirmed in chat, and it does not authorize paid requests, deployment or a store release.
+
+The dated sequencing revision above and separately requested/implemented review tooling are already authorized within their recorded scope; blank sign-off fields do not revoke those instructions. D10/D11/D12 remain OPEN and no runtime work is marked complete by this revision.

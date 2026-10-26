@@ -1,5 +1,18 @@
 # Changelog
 
+## Gemini model compatibility and quota recovery — 2026-10-26
+
+- Permit dotted model IDs in reviewer policy and frozen selection, retaining bounded safe-token validation and adding flow/provenance and rejection regressions.
+- Activate owner-authorized Gemini 3.8 Flash (High) after explicit Opus quota exhaustion; retain the failed INCOMPLETE record and normal Opus/Sonnet preference. No automatic failover or app runtime change.
+
+## Quality-first personal MVP plan — 2026-10-22
+
+- Moved the existing-path content-quality/timing spike before revised application work, with explicit key/budget prerequisites and no paid calls in the documentation task.
+- Kept one complete call for the initial scoreless chosen-first interface; retained D08 intent behind measured need and an experiment/owner gate.
+- Retained complete-entry compatibility work while deferring phase/cache/partial-storage/coordinator infrastructure.
+- Added concrete rule-promotion boundaries and acceptance for explicit resonance, readable unsaved results, save-only retry and new-input/stale-response protection.
+- Aligned roadmap draft priority and open choices; preserved implemented facts and historical verification without claiming new runtime behavior.
+
 ## Conservative reviewer routing — 2026-10-22
 
 - Added committed task complexity/scope/reason assessments, with Opus for uncertain, medium/high, runtime/configuration and integration work.

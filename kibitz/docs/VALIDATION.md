@@ -1,6 +1,24 @@
 # Kibitz validation record
 
-Updated 2026-10-22. Environment: macOS, Node.js 24.12.0. Current automated evidence, historical prototype evidence and unverified native/live behavior are recorded separately.
+Updated 2026-10-26. Environment: macOS, Node.js 24.12.0. Current automated evidence, historical prototype evidence and unverified native/live behavior are recorded separately.
+
+## Gemini model compatibility and quota recovery — 2026-10-26
+
+The owner authorized Gemini following explicit Opus quota exhaustion. The account catalog lists `gemini-3.8-flash-high`; High is the active default during this block, while normal Opus/Sonnet preference remains documented. This is a coordinator-managed new-policy/new-run procedure, not runner auto-failover or equivalent-quality evidence.
+
+The previous documentation run `20261022T231511Z-5916353f`, temporary head `9585ddfe0ebab2a1a892a15058b8aff2bb720f64`, ended with `Individual quota reached` and no structured verdict. Preserve that INCOMPLETE record. Authentication, timeout, missing-model, denied-tool and generic rate errors do not authorize switching. Stop if Gemini also fails.
+
+Preparation initially rejected the real Gemini ID because three model validators allowed hyphens but not dots. They now also allow dots within the existing bounded, alphanumeric-leading model token. Flags, whitespace, paths and excessive length remain rejected. No selection, subprocess, transport, retry or provenance behavior changes. The expanded local harness suite passed **44/44** using temporary repositories and mock reviewers. The task also captures this suite plus typecheck/lint; its generated report supplies the real verdict. Mock Gemini flow/provenance coverage is not a live-model PASS. No app evaluation API call, native run or app-suite rerun is claimed.
+
+The real compatibility review completed **PASS**, no findings, on temporary head `e2ab8208fee9a7ab4f4e56b2a86b7bc8310d1b5c` from base `6348ee3bfa4613d328655321f6aef0ba59ef1dde`, run `20261026T174152Z-38c5e41f`. Requested and CLI-reported model both matched `gemini-3.8-flash-high`; captured checks were harness **44/44**, typecheck and lint. This covers the compatibility/model-policy range, not the pending product-plan range or a future owner commit. Its ignored run archive retains the raw stream and structured result.
+
+## Quality-first plan correction — 2026-10-22
+
+This documentation correction moves existing-path quality/timing evidence to T00.5 before implementation, keeps one complete scoreless call for the first target and gates D08 on T08. It aligns rule promotion, compatibility, resonance and save/supersession acceptance.
+
+This documentation review starts at the separate October 26 Gemini compatibility candidate recorded above. The documentation range changes no app/provider/storage/dependencies, reviewer implementation or active model policy. The preceding compatibility range permits dotted model IDs and changes reviewer policy; do not describe the aggregate owner diff as documentation-only. The scoped documentation task captures typecheck/lint; local checks cover links/AC mappings/dependencies. Earlier app 22/22 evidence remains historical; the compatibility candidate separately captures harness 44/44.
+
+T00.5 still needs a configured server-only key, explicit owner budget, fictional cases and go/revise/stop report. Repeat relevant cases after target prompt/contract changes; baseline scored evidence does not validate future output.
 
 ## Conservative reviewer routing — 2026-10-22
 
@@ -79,7 +97,7 @@ Screenshots are retained under [archive/initial-korean-prototype](archive/initia
 - Installed iOS/Android flows, safe areas, keyboard, increased font sizes, back navigation, long content and persistence after a process restart.
 - The unlocked map with actual user AI records; calculation/eligibility are tested, but live/native integration is not.
 - Signed EAS installation builds, final app identifiers, signing ownership and store release.
-- Xcode/simulator setup: this Mac previously reported an unaccepted Xcode license. No OS license agreement or signing setup was changed in this task.
+- Current local Xcode/simulator readiness has not been rechecked in this documentation task. The earlier unaccepted-license report is historical, not an asserted current blocker; check the environment before relying on it. Simulator/runtime availability still does not establish installed-device acceptance. No OS license or signing settings were changed here.
 
 A browser screenshot is not a substitute for these mobile checks. See [the roadmap](ROADMAP.md) for priorities and acceptance criteria.
 

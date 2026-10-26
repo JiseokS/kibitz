@@ -1,5 +1,5 @@
 {
-  "model": "claude-opus-4-6-thinking",
+  "model": "gemini-3.8-flash-high",
   "routing": {
     "simple_model": "claude-sonnet-4-6"
   }

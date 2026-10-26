@@ -1,6 +1,16 @@
 # Kibitz architecture and contracts
 
-Updated 2026-10-19. These are current implementation facts unless marked future.
+Updated 2026-10-22. These are current implementation facts unless marked as the accepted next slice or deferred work.
+
+## Accepted next slice — not implemented
+
+Follow the revised [delivery order](planning/DELIVERY_PLAN.md): T00.5 tests the existing AI path before architecture changes, with a configured server-only key and explicit owner budget. No application call occurs in this documentation task.
+
+After go, T01 introduces one complete scoreless four-perspective response with per-lens actions and synthesis; T03 adds original first-choice metadata and tested legacy compatibility before writes. Preserve old content, scores and votes without fabricating missing metadata/actions. No migration occurs now.
+
+T04/T05 show validated transient results as saving/unsaved before persistence; only a successful write publishes saved status. Save retry calls no AI; memory is not process-durable. AC04/AC16/AC17 cover save failure, explicit resonance and stale-work/draft/deletion guards.
+
+D08 phases/cache/partial storage/coordinator require T08 evidence and owner go. Later primary display precedes save; save success precedes the extra paid request, paused visibly on failure. The implemented facts below remain unchanged.
 
 ## Stack and boundaries
 
@@ -102,6 +112,8 @@ The client may read `EXPO_PUBLIC_API_URL` as its initial origin. The optional ac
 
 ## Development review tooling — 2026-10-21
 
-The repository-level `scripts/review.mjs` coordinates committed-change reviews without changing the mobile/API runtime. It captures allowlisted checks against a clean exact source HEAD, creates an independent clone without a remote, supplies frozen code/test evidence to Antigravity CLI, and validates structured review results plus source/snapshot integrity. The committed `harness/reviewer.json` uses Opus 4.6 Thinking by default and permits Sonnet 4.6 Thinking only for explicitly low-risk, small documentation-only routine reviews. Codex records semantic complexity/scope/reason in the task; deterministic diff/context guards can raise the choice. Version 3 manifests freeze this selection and rederive it during run/status; matching CLI model-selection evidence is still required. Unknown, medium/high and integration work uses Opus, with no quota-based downgrade. Historical fixed-model evidence stays attributed to its original model. The current Codex chat handles implementation and up to two repair cycles. Owner-controlled pre-commit reviews use independent temporary candidate commits and file hashes. The runner makes no merge/push decisions. Runtime artifacts are ignored under `harness/runs/`; see [the harness guide](../../harness/README.md).
+Quota exception, 2026-10-26: the Opus/Sonnet preference described below remains the normal policy. The active default is currently `gemini-3.8-flash-high` after the owner authorized recovery from an explicit Opus quota failure. Codex changes policy in a new frozen candidate; the runner does not auto-failover or relabel old evidence. See the harness guide for recovery conditions.
+
+The repository-level `scripts/review.mjs` coordinates committed-change reviews without changing the mobile/API runtime. It captures allowlisted checks against a clean exact source HEAD, creates an independent clone without a remote, supplies frozen code/test evidence to Antigravity CLI, and validates structured review results plus source/snapshot integrity. The committed `harness/reviewer.json` uses Opus 4.6 Thinking by default and permits Sonnet 4.6 Thinking only for explicitly low-risk, small documentation-only routine reviews. Codex records semantic complexity/scope/reason in the task; deterministic diff/context guards can raise the choice. Version 3 manifests freeze this selection and rederive it during run/status; matching CLI model-selection evidence is still required. Unknown, medium/high and integration work uses Opus, with no automatic quota-based downgrade. Historical fixed-model evidence stays attributed to its original model. The current Codex chat handles implementation and up to two repair cycles. Owner-controlled pre-commit reviews use independent temporary candidate commits and file hashes. The runner makes no merge/push decisions. Runtime artifacts are ignored under `harness/runs/`; see [the harness guide](../../harness/README.md).
 
 Review context is delivered as one stdin frame followed by EOF, with no prompt in process arguments. Reviewer/help processes receive an explicit minimal environment instead of app/API/CI secrets or preload hooks. Repository checks keep their existing environment and execute owner-trusted code; the CLI sandbox is not their isolation boundary. Stdin delivery failures cannot become a successful review.

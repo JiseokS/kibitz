@@ -168,13 +168,17 @@ const safePath = (value) =>
   !value.includes("\0") &&
   !value.split("/").some((part) => part === ".." || part === "");
 
+// Use a strict end assertion: JavaScript $ also matches before a final newline.
 function validateReviewer(reviewer) {
   validateSchema(reviewer, {
     type: "object",
     required: ["model"],
     additionalProperties: false,
     properties: {
-      model: { type: "string", pattern: "^[a-z0-9][a-z0-9-]{0,99}$" },
+      model: {
+        type: "string",
+        pattern: "^[a-z0-9][a-z0-9.-]{0,99}(?![\\s\\S])",
+      },
     },
   });
 }
@@ -185,7 +189,10 @@ function validateReviewerPolicy(policy) {
     required: ["model"],
     additionalProperties: false,
     properties: {
-      model: { type: "string", pattern: "^[a-z0-9][a-z0-9-]{0,99}$" },
+      model: {
+        type: "string",
+        pattern: "^[a-z0-9][a-z0-9.-]{0,99}(?![\\s\\S])",
+      },
       routing: {
         type: "object",
         required: ["simple_model"],
@@ -193,7 +200,7 @@ function validateReviewerPolicy(policy) {
         properties: {
           simple_model: {
             type: "string",
-            pattern: "^[a-z0-9][a-z0-9-]{0,99}$",
+            pattern: "^[a-z0-9][a-z0-9.-]{0,99}(?![\\s\\S])",
           },
         },
       },
